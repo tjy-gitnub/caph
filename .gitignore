@@ -1,0 +1,36 @@
+.vscode/
+
+# Build outputs
+[Bb]in/
+[Oo]bj/
+dist/
+build/
+publish/
+
+# visual studio cache/options directory
+.vs/
+**/[Pp]ackages
+# Uncomment if necessary however generally it will be regenerated when needed
+# NuGet v3's project.json files produces more ignorable files
+*.nuget.props
+*.nuget.targets
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.venv/
+.env
+
+# Django
+db.sqlite3
+media/
+staticfiles/
+local_settings.py
+
+# Misc
+*.log
+node_modules/
+

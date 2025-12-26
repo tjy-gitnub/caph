@@ -1,0 +1,40 @@
+﻿<ui:FluentWindow xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+xmlns:local="clr-namespace:Webapp"
+xmlns:Wpf="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf" x:Class="Webapp.MainWindow"
+mc:Ignorable="d"
+xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+Width="400" Height="800"
+Title="MainWindow" WindowBackdropType="Acrylic" ExtendsContentIntoTitleBar="True" WindowCornerPreference="Round" ResizeMode="CanResize"
+ShowInTaskbar="False">
+    <!-- Root grid that will be translated for smooth animation -->
+    <Grid x:Name="RootGrid" RenderTransformOrigin="0,0">
+        <Grid.RenderTransform>
+            <TranslateTransform x:Name="RootTranslate" X="0" />
+        </Grid.RenderTransform>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Custom header: only title and a hide button. No drag behavior. -->
+        <Border Background="Transparent" Padding="7" Grid.Row="0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="Caph" VerticalAlignment="Center" FontSize="14" Foreground="White"  Margin="10,0,0,0"/>
+                <ui:Button x:Name="HideButton" Grid.Column="1" Width="26" Height="26" Margin="8,0,0,0" VerticalAlignment="Center" Padding="0" ToolTip="隐藏" Appearance="Transparent">
+                    <TextBlock FontFamily="Segoe Fluent Icons" FontSize="15" Text="&#xE974;" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </ui:Button>
+            </Grid>
+        </Border>
+
+        <Wpf:WebView2 x:Name="wv" Source="http://localhost:777" Grid.Row="1" DefaultBackgroundColor="Transparent" Margin="5,0,5,5"/>
+    </Grid>
+
+</ui:FluentWindow>
