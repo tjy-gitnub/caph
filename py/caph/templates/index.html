@@ -27,7 +27,7 @@
     <script src="static/js/settings.js"></script>
     <script src="static/js/dom.js"></script>
     <script src="static/js/conversations.js"></script>
-    <script src="static/js/tools.js"></script>
+    <script src="static/tools.js"></script>
     <script src="static/js/app.js"></script>
     <base target="_blank">
 </head>
@@ -45,7 +45,7 @@
                     导出当前对话
                 </div>
             </div>
-            <div class="br"></div>
+            <div class="hr"></div>
             <div class="list" id="actions-list">
                 <div class="a" id="new-conversation" title="新建空对话" onclick="conversationManager.createConversation();">
                     <span class="sfi">&#xE710;</span> 新建对话</div>
@@ -55,7 +55,7 @@
             <div class="list" id="conversations-list">
                 <!-- conversations.js 会渲染新对话、会话列表与操作按钮 -->
             </div>
-            <div class="br"></div>
+            <div class="hr"></div>
 
             <div class="list">
                 <div id="open-settings" class="a">
@@ -120,7 +120,11 @@
                     <div class="settings-menu-item a" data-section="models">
                         <span class="sfi">&#xF0E2;</span>
                         <!-- <span class="sfi">&#xE74C;</span> -->
-                        可用模型
+                        管理模型
+                    </div>
+                    <div class="settings-menu-item a" data-section="tools">
+                        <span class="sfi">&#xEC7A;</span>
+                        工具
                     </div>
                 </div>
             </div>
@@ -164,18 +168,27 @@
                     </div>
                 </div>
 
-                <!-- 模型配置 -->
+                <!-- 管理模型 -->
                 <div class="settings-section" id="models-settings">
                     <div class="settings-header">
-                        <h2 class="settings-title">模型配置</h2>
+                        <h2 class="settings-title">管理模型</h2>
                         <span style="font-size:14px;opacity: 0.7;">管理AI模型，添加、删除或调整顺序。</span>
                         <div style="display: flex;">
                             <a class="lnkbtn" onclick="window.open('https:\/\/github.com/marketplace?task=chat-completion&type=models', '_blank')">浏览 Github Models</a>
-                            <a class="lnkbtn" onclick="window.open('https:\/\/docs.github.com/zh/github-models/use-github-models/prototyping-with-ai-models#rate-limits', '_blank')">查看额度</a>
+                            <a class="lnkbtn" onclick="window.open('https:\/\/docs.github.com/zh/github-models/use-github-models/prototyping-with-ai-models#rate-limits', '_blank')">浏览额度</a>
                         </div>
                     </div>
                     <div class="models-grid" id="model-list">
                         <!-- 这里会动态填充模型卡片 -->
+                    </div>
+                </div>
+                <!-- 工具 -->
+                <div class="settings-section" id="tools-settings">
+                    <div class="settings-header">
+                        <h2 class="settings-title">工具</h2>
+                        <span style="font-size:14px;opacity: 0.7;">查看所有可用工具。</span>
+                    </div>
+                    <div class="list" id="av-tools-list">
                     </div>
                 </div>
 

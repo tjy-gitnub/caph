@@ -32,6 +32,7 @@ class Settings {
         typeof DEFAULT_SETTINGS.models
           ? DEFAULT_SETTINGS.models
           : AVAILABLE_MODELS,
+      tools_disabled: {},
     };
   }
 
@@ -52,6 +53,9 @@ class Settings {
 
     // 填充模型列表
     this.renderModelSettings();
+
+    // 填充工具列表
+    this.renderToolSettings();
 
     $('#app').removeClass("show");
     $("#settings-modal").addClass("show");
@@ -114,6 +118,25 @@ class Settings {
     dom.loadModels();
 
     this.closeSettings();
+  }
+
+  renderToolSettings() {
+    const $toolList = $("#av-tools-list").empty();
+    av_tools.forEach(tool => {
+      $toolList.append(`<div class="card">
+        <div class="header">
+          <input type="checkbox" class="tool-enable" data-tool-name="${tool.function.name}" ${settings_data.tools_disabled[tool.function.name]?'':'checked'} onchange="settingManager.toggleToolEnable('${tool.function.name}');">
+          <label class="name" onclick="$(this).prev().click();">${tool.function.name}</label>
+        </div>
+        <div class="hr"></div>
+        <div class="description">${tool.function.description}</div>
+      </div>`);
+    });
+  }
+
+  toggleToolEnable(toolName) {
+    const isEnabled = $(`.tool-enable[data-tool-name="${toolName}"]`).prop("checked");
+    settings_data.tools_disabled[toolName] = !isEnabled;
   }
 
   // 设置面板的模型列表管理

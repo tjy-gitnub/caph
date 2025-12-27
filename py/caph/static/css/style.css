@@ -147,7 +147,7 @@ body {
     opacity: 0.8;
 }
 
-.br {
+.hr {
     display: block;
     height: 1px;
     width: 100%;
@@ -316,8 +316,8 @@ body {
     }
 }
 
-.message.message.assistant.tool-calls {
-    /* margin-bottom: 0; */
+.message.assistant.tool-calls>.message-toolbar>.delete-button {
+    display: none;
 }
 
 .multiple-tool-calls {

@@ -31,19 +31,21 @@ const activeConv = convManager.getActive();
 defaultModel =
   activeConv?.model ||
   localStorage.getItem("defaultModel") ||
-  (settings_data.models && Object.keys(settings_data.models)[0]) ||
-  "deepseek/DeepSeek-R1";
+  DEFAULT_MODEL;
 currentModel =
   activeConv?.model || localStorage.getItem("defaultModel") || defaultModel;
 
 // 处理 GitHub Token
-if (GITHUB_TOKEN != "__your_gh_token__") {
+if (GITHUB_TOKEN !== "__your_gh_token__") {
   ghtoken = GITHUB_TOKEN;
   $("#token-error").hide();
 } else {
   ghtoken = localStorage.getItem("ghtoken");
   if (!ghtoken) {
-    $("#token-error").show();
+    console.error("未设置 GITHUB_TOKEN。请前往设置页面输入你的 GitHub Token。");
+    document.addEventListener("DOMContentLoaded", () => {
+      $("#token-error").show();
+    });
   }
 }
 contentProcessor = new ContentProcessor(); // 内容处理器（Markdown、代码高亮等）
@@ -397,6 +399,9 @@ async function sendToServer() {
     if (ghtoken) headers.append("Authorization", `Bearer ${ghtoken}`);
 
 
+    const enabledTools = av_tools.filter(t => {
+      return !settings_data.tools_disabled[t.function.name];
+    });
     const response = await fetch(`${ENDPOINT}/chat/completions`, {
       method: "POST",
       headers,
@@ -404,7 +409,7 @@ async function sendToServer() {
         messages,
         model: modelToUse,
         temperature,
-        tools: av_tools,
+        tools: enabledTools,
         stream: settings_data.stream ?? true,
       }),
     });

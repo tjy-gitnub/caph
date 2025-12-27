@@ -15,7 +15,20 @@
 
 （上图为最初版截图，请以实际界面和功能为准）
 
-## 使用
+## 使用说明
+### 生成
 
-1. 使用 Visual Studio 生成（WPF 应用）
-2. 需要有 python (3.9 最佳)，安装 django
+1. 使用 Visual Studio 生成（WPF 应用，项目解决方案在 `/viewer/Webapp.sln`）。
+2. 需要有 python（3.9 最佳），安装 django。
+
+### 运行
+
+1. 在 `/py` 目录下启动服务：
+    ```bash
+    python manage.py runserver 777
+    ```
+2. 打开 Visual Studio 生成的 exe 文件
+
+### 自定义工具
+
+在 `/py/caph/static/tools.js` 中，具体参见注释说明。

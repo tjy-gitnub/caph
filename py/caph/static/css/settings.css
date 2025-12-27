@@ -11,7 +11,6 @@
     display: flex;
     z-index: 1000;
     flex-direction: column;
-    margin: 0 5px 0 0;
 
     transition: opacity 200ms,visibility 200ms,transform 200ms;
     transform: translateX(50%);
@@ -23,6 +22,10 @@
     transform: none;
     visibility: visible;
     opacity: 1;
+}
+
+#settings-sidebar{
+    background-color: var(--input);
 }
 
 #settings-sidebar>.list{
@@ -62,7 +65,7 @@
     padding: 20px;
     overflow-y: auto;
     position: relative;
-    background-color: var(--card-bg);
+    background-color: var(--message-bot-bg);
     border: var(--border-color) solid 1px;
     border-radius: 10px;
     scroll-behavior: smooth;
@@ -323,7 +326,7 @@ textarea.input-field {
 .model-card.dragging {
     transform: none !important;
     transition: none !important;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    box-shadow: var(--shadow);
     background: var(--bg-color) !important;
     border-radius: 8px;
     pointer-events: none;
@@ -405,4 +408,41 @@ textarea.input-field {
 }
 .add-model-btn i {
     font-size: 24px;
+}
+
+#av-tools-list{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    >.card{
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        >.header{
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            >.toggle{
+                cursor: default;
+                border: none;
+                background: none;
+                color: var(--text-color);
+                font-size: 16px;
+                font-weight: 500;
+                padding: 0;
+                margin: 0;
+            }
+            >.name{
+                font-size: 18px;
+            }
+        }
+        >.description{
+            font-size: 14px;
+        }
+    }
 }

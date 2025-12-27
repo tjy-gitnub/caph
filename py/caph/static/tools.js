@@ -1,6 +1,5 @@
 // 工具定义与处理
 
-
 const av_tools = [
     {
         type: "function",
@@ -12,8 +11,8 @@ const av_tools = [
                 type: "object",
                 properties: {
                     command: {
-                      type: "string",
-                      description: "命令",
+                        type: "string",
+                        description: "命令",
                     },
                 },
                 required: ['command'],
@@ -41,10 +40,19 @@ const av_tools = [
 ];
 
 // 返回值为 string 或 JSON（可为 Promise）
+// 需要在 python 后端中实现对应请求 (在 /py/caph/urls.py 中注册，在 /py/caph/views.py 中实现)
+
+function call_tool(toolname) {
+    return function (c){
+        return $.post('/tool/' + toolname, c).then(data => data).catch(r => {
+            return `[命令执行失败: ${r.status} ${r.statusText}]`;
+        });
+    }
+}
+
 const tool_handlers = {
-    run_cmd: (c) => {
-        return $.post('/tool/run_cmd', { command: c.command }).then(data => data);
-    },
+    run_cmd: call_tool('run_cmd'),
+
     // run_python: () => {
     //     return '[用户已拒绝]';
     // },
