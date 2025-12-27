@@ -201,7 +201,8 @@
 
 /* 代码块样式 */
 
-pre[class*="language-"] {
+pre[class*="language-"],
+pre.tool-result {
     background: var(--bg-color);
     border: 1px solid var(--border-color);
     margin: 1em 0;

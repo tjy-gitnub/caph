@@ -7,7 +7,7 @@ const av_tools = [
         function: {
             name: "run_cmd",
             description:
-                `运行 cmd 命令。环境: Windows11 x64。请先向用户说明运行的理由、预期效果、注意事项等。`,
+                `运行 cmd 命令。环境: Windows11 x64。当前目录在 E: 盘。`,
             parameters: {
                 type: "object",
                 properties: {

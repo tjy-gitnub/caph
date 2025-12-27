@@ -1,4 +1,9 @@
-# Caph
+
+<div align="center">
+    <img src="./ico.svg" alt="Caph Logo" height="80" align="center"/>
+    <h1 style="margin: 10px;">Caph</h1>
+    <p>由 星源 开发 | Developed by Starry Source</p>
+</div>
 
 用于 Windows 的桌面 Copilot 助手的平替。
 
@@ -8,7 +13,9 @@
 
 ![](./art/image.png)
 
-## 生成
+（上图为最初版截图，请以实际界面和功能为准）
+
+## 使用
 
 1. 使用 Visual Studio 生成（WPF 应用）
-2. 需要有 python (3.9 最佳)，安装 django (项目无虚拟环境)
+2. 需要有 python (3.9 最佳)，安装 django

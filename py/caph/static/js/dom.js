@@ -129,7 +129,7 @@ class Dom {
 
   // 历史记录渲染
   async renderChatHistory() {
-    console.log("开始渲染历史记录:", chatHistory);
+    console.log("Render history:", chatHistory);
     const $messagesContainer = $("#chat-messages");
     $messagesContainer.empty();
     let lastTimestamp = null;
@@ -195,10 +195,23 @@ class Dom {
 
     if (message.isUser) {
       $content.text(processedContent);
+    } else if (message.role === 'tool') {
+      processedContent = `<div class="think-content collapsed" onclick="if($(this).hasClass('collapsed')) $(this).find('.think-toggle').click();">
+                    <div class="think-header">
+                        <span class="think-title">工具返回结果</span>
+                        <button class="think-toggle" onclick="$(this.parentElement.parentElement).toggleClass('collapsed');$(this).find('.sfi').toggleClass('down');event.stopPropagation();">
+                            <span class="sfi chevron-down">&#xE70D;</span>
+                        </button>
+                    </div>
+                    <pre class="think-body tool-result">${processedContent}</pre>
+                </div>`
+      $content.html(processedContent);
+    } else if (message.role === 'tool-confirm') {
+      // nothing
     } else {
       if (Array.isArray(message.tool_calls) && message.tool_calls.length) {
         const name = message.tool_calls[0]?.function?.name || "工具调用";
-        processedContent+=`<div class="inline-tool"><span>使用工具 </span><span class=name>${name}</span></div>`;
+        processedContent += `<div class="inline-tool"><span>使用工具 </span><span class=name>${name}</span></div>`;
         // 不渲染数学公式或代码高亮（工具调用的内容由卡片展示）
         // this.bindMessageToolbarEvents($message, message);
         // return $message;
@@ -222,7 +235,7 @@ class Dom {
     }
 
     // 绑定工具栏事件
-    if(message.role!='tool')
+    if (message.role != 'tool')
       this.bindMessageToolbarEvents($message, message);
 
     return $message;
@@ -256,17 +269,20 @@ class Dom {
 
   // 统一的消息模板
   createMessageElement(message) {
-    console.log(message);
     let senderName;
     if (message.isUser) {
       senderName = "用户";
-    } else if (message.role === "tool" || message.tool) {
+    } else if (message.role === "tool") {
       return $(`
       <div class="message tool">
         <div class="message-header">
           <div style="font-weight:500;">工具调用: <span style="font-weight:600;">${message.tool || '?'}</span></div>
         </div>
-        <div class="message-content" style="white-space:pre-wrap;">${message.content}</div>
+        <div class="message-content">${message.content}</div>
+      </div>`);
+    } else if (message.role === 'tool-confirm') {
+      return $(`<div class="message tool-confirm">
+        <div class="message-content">${message.content}</div>
       </div>`);
     } else {
       senderName = settings_data.models[message.model] || message.model || "AI";
@@ -274,12 +290,12 @@ class Dom {
 
     return $(
       `
-            <div class="message ${message.role} ${(message.role=='assistant'&&message.tool_calls)?'tool-calls':''}" data-id="${message.id}">
+            <div class="message ${message.role} ${(message.role == 'assistant' && message.tool_calls) ? 'tool-calls' : ''}" data-id="${message.id}">
                 <div class="message-header">
                     <span class="message-sender">${senderName}</span>` +
-                `</div>
+      `</div>
                 <div class="message-content"></div>
-               `+(message.role!='tool'?`
+               `+ (message.role != 'tool' ? `
                 <div class="message-toolbar">
                     <button class="toolbar-button delete-button" title="删除">
                         <span class="sfi">&#xE74D;</span>
@@ -294,8 +310,8 @@ class Dom {
                         <span class="sfi">&#xE70F;</span>
                     </button>
                 </div>`:
-                '')
-                +`
+        '')
+      + `
             </div>
         `
     );
@@ -478,7 +494,7 @@ class Dom {
   // 历史消息内容处理函数
   async processMessageContent(message) {
     try {
-      if (message.role!='assistant') {
+      if (message.role != 'assistant') {
         return message.content; // 用户/工具 直接返回文本
       }
       return await contentProcessor.process(message.content);
@@ -505,7 +521,7 @@ class Dom {
     }
 
     const $card = $(`
-      <div class="message tool">
+      <div class="message tool waiting-confirmation">
         <div class="message-header">
           <div style="font-weight:500;">工具调用: <span style="font-weight:600;">${name}</span></div>
           <div class="tool-state" style="opacity:0.8;font-size:13px;">等待确认</div>
@@ -522,18 +538,12 @@ class Dom {
     $card.find(".tool-approve").click((e) => {
       e.stopPropagation();
       $card.find(".tool-approve,.tool-cancel").prop("disabled", true);
-      if (typeof onApprove === "function") {
-        onApprove($card);
-      }
+      onApprove($card);
     });
     $card.find(".tool-cancel").click((e) => {
       e.stopPropagation();
       $card.find(".tool-approve,.tool-cancel").prop("disabled", true);
-      if (typeof onDeny === "function") {
-        onDeny($card);
-      } else {
-        this.updateToolCardState($card, "cancelled");
-      }
+      onDeny($card);
     });
 
     // 插入位置：优先 beforeEl（若指定），否则如果有正在流式的 AI 消息则放在其后，否则追加到消息列表末尾
@@ -563,20 +573,49 @@ class Dom {
   updateToolCardState($card, state) {
     const $state = $card.find(".tool-state");
     if (state === "confirm") {
-      $state.text("等待用户确认");
+      $state.text("等待确认");
     } else if (state === "loading") {
       $state.text("执行中...");
-    } else if (state === "cancelled") {
-      $state.text("已拒绝");
-    } else if (state === "done") {
+    }else if (state === "done") {
       $state.text("已完成");
+      $card.removeClass("waiting-confirmation");
     }
   }
 
-  updateToolCardResultWithDone($card, resultText) {
-    $card.find(".message-content").text(resultText);
-    this.updateToolCardState($card, "done");
-    // $card.find(".actions").hide();
+  updateToolCardResultWithDone($card) {
+    if ($('.multiple-tool-calls').length) {
+      console.log('Updating multiple tool calls card');
+      const $count=$('.multiple-tool-calls').find('.tool-count');
+      if(parseInt($count.text())>1)
+        $count.text(
+          parseInt($count.text()) - 1
+        );
+      else {
+        $('.multiple-tool-calls').remove();
+      }
+    }
     $card.remove();
+  }
+
+  arrangeMultipleToolCards(num) {
+    const $total = $(`
+      <div class="multiple-tool-calls">
+        <div class="text">共 <span class="tool-count">${num}</span> 个工具调用</div>
+        <div class="actions">
+          <button class="button primary tool-approve-all" title="全部同意">全部同意</button>
+          <button class="button tool-cancel-all" title="全部拒绝">全部拒绝</button>
+        </div>
+      </div>
+    `);
+
+    $total.find(".tool-approve-all").click((e) => {
+      e.stopPropagation();
+      $(".tool-approve").click();
+    });
+    $total.find(".tool-cancel-all").click((e) => {
+      e.stopPropagation();
+      $(".tool-cancel").click();
+    });
+    $("#chat-messages").append($total);
   }
 }

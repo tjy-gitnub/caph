@@ -1,4 +1,4 @@
-dom = new Dom();
+const dom = new Dom();
 
 chatHistory = []; // 当前对话消息历史
 isProcessing = false; // 消息处理状态标志
@@ -25,7 +25,6 @@ if (settings_data.autoTheme) {
 
 // 对话管理器（全局实例）
 convManager = window.conversationManager;
-console.log(convManager);
 
 // 确定当前使用的模型（优先级：当前会话 > 本地存储 > 设置 > 默认）
 const activeConv = convManager.getActive();
@@ -353,7 +352,6 @@ async function retryMessage(id) {
 
   // 删除该消息后的所有消息
   const messages = chatHistory.slice(0, messageIndex + 1);
-  console.log(messages);
   chatHistory = messages;
   await dom.renderChatHistory();
   saveHistory();
@@ -392,7 +390,7 @@ async function sendToServer() {
       }),
     ];
 
-    console.log("Sending history:", messages);
+    console.log("Sending request with history:", messages);
 
     const headers = new Headers();
     headers.append("Content-Type", "application/json");
@@ -443,7 +441,7 @@ async function sendToServer() {
     // 读取流式响应
     while (true) {
       const { value, done } = await reader.read();
-      if (done) break;
+
 
       buffer += new TextDecoder().decode(value);
       const events = buffer.split("\n\n");
@@ -596,13 +594,13 @@ async function sendToServer() {
                 try {
                   if (handler) result = await handler(parsedArgs);
                   else result = `[找不到工具: ${toolCallBuffer[toolIndex].name}]`;
-                  if(typeof result !== "string") {
+                  if (typeof result !== "string") {
                     result = JSON.stringify(result, null, 2);
                   }
                   if (result.length > 1000) {
                     result = result.substring(0, 1000) + "......[结果过长，已截断]";
                   }
-                  console.log("Name:", toolCallBuffer[toolIndex].name, "Args:", parsedArgs, "Result:", result);
+                  console.log("Tool name:", toolCallBuffer[toolIndex].name, "Args:", parsedArgs, "Result:", result);
 
                 } catch (err) {
                   console.error("Tool execution failed:", err);
@@ -622,11 +620,10 @@ async function sendToServer() {
 
                 dom.renderMessageElement(toolMessage).then(($tm) => {
                   $card.after($tm);
-                  dom.updateToolCardResultWithDone($card, result);
+                  dom.updateToolCardResultWithDone($card);
                   dom.scrollToBottom();
                 });
                 finishedToolCalls[toolIndex] = true;
-                console.log("Finished tool calls:", finishedToolCalls);
                 if (finishedToolCalls.indexOf(false) === -1) {
                   pausedForTool = false;
                   await continueAfterTool();
@@ -652,7 +649,7 @@ async function sendToServer() {
 
                 dom.renderMessageElement(toolMessage).then(($tm) => {
                   $card.after($tm);
-                  dom.updateToolCardResultWithDone($card, "[用户已拒绝]");
+                  dom.updateToolCardResultWithDone($card);
                   dom.scrollToBottom();
                 });
                 if (finishedToolCalls.indexOf(false) === -1) {
@@ -671,17 +668,8 @@ async function sendToServer() {
             }
           }
 
-          // 如果服务器标记tool_calls完成，暂停读取
-          if (data.choices?.[0]?.finish_reason === "tool_calls") {
-            try {
-              await reader.cancel();
-            } catch (e) { }
-            pausedForTool = true;
-            break;
-          }
-
-          continue;
         }
+
 
         // 普通文本内容
         const text = delta.content || "";
@@ -694,9 +682,25 @@ async function sendToServer() {
             updateStreamingMessage(fullResponse);
           }
         }
+
+        if (data.choices?.[0]?.finish_reason === "tool_calls") {
+          console.log("Pausing for", toolCallBuffer.length, "tool calls");
+          pausedForTool = true;
+          if (toolCallBuffer.length > 1) {
+            // 整理多个工具卡片
+            dom.arrangeMultipleToolCards(toolCallBuffer.length);
+          }
+          // break;
+        }
+
       }
 
-      if (pausedForTool) break;
+      // if (pausedForTool) break;
+
+      if (done) {
+        console.log("Stream ended");
+        break;
+      }
     }
 
     // 处理剩余的缓冲区数据
@@ -732,124 +736,5 @@ async function sendToServer() {
     finalizeMessage(fullResponse);
     fullResponse = '';
     sendToServer();
-    return;
-    dom.setLoading(true);
-    let contFullResponse = ''; // 续写到原有内容上
-    try {
-      const active = convManager.getActive();
-      const systemPrompt = settings_data.systemPrompt;
-      const temperature = settings_data.temperature ?? 0.7;
-      const modelToUse = active?.model || currentModel;
-
-      // 使用当前chatHistory构造消息（包含工具调用和结果）
-      const messages2 = [
-        { role: "system", content: systemPrompt },
-        ...chatHistory.map((msg) => {
-          if (msg.isUser) return { role: "user", content: msg.content };
-          if (msg.role === "tool"){
-            console.log("Mapping tool message:", msg);
-            return { role: "tool", name: msg.tool, content: msg.content, tool_call_id: msg.tool_call_id };
-          }
-          // assistant（可能包含tool_calls）
-          const assistantObj = { role: "assistant", content: msg.content || "" };
-          if (Array.isArray(msg.tool_calls) && msg.tool_calls.length) {
-            assistantObj.tool_calls = msg.tool_calls.map((tc) => ({
-              ...tc,
-              type: tc.type || "function",
-              function: {
-                name: (tc.function && tc.function.name) || "",
-                arguments: (tc.function && tc.function.arguments) || "",
-              },
-            }));
-          }
-          return assistantObj;
-        }),
-      ];
-
-      const headers = new Headers();
-      headers.append("Content-Type", "application/json");
-      if (ghtoken) {
-        headers.append("Authorization", `Bearer ${ghtoken}`);
-      }
-
-      const response = await fetch(`${ENDPOINT}/chat/completions`, {
-        method: "POST",
-        headers: headers,
-        body: JSON.stringify({
-          messages: messages2,
-          model: modelToUse,
-          temperature: temperature,
-          stream: true,
-        }),
-      });
-
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error?.message || `请求失败 ${response.status}`);
-      }
-
-      const reader = response.body.getReader();
-      let buffer2 = "";
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buffer2 += new TextDecoder().decode(value);
-
-        const events2 = buffer2.split("\n\n");
-        buffer2 = events2.pop() || "";
-
-        for (const ev2 of events2) {
-          if (!ev2.trim()) continue;
-          const dataLines2 = ev2
-            .split("\n")
-            .filter((l) => l.startsWith("data:"))
-            .map((l) => l.replace(/^data:\s?/, ""))
-            .join("\n")
-            .trim();
-
-          if (!dataLines2 || dataLines2 === "[DONE]") continue;
-          try {
-            const data = JSON.parse(dataLines2);
-            const content = data.choices?.[0]?.delta?.content || "";
-            if (content) {
-              contFullResponse += content;
-              // 继续更新原来的流式消息内容
-              updateStreamingMessage(contFullResponse);
-            }
-          } catch (e) {
-            console.warn("skip:", e, dataLines2);
-            continue;
-          }
-        }
-      }
-
-      // 处理最后缓冲
-      if (buffer2.trim()) {
-        try {
-          const lines = buffer2.split("\n").filter((l) => l.startsWith("data:"));
-          const dataStr = lines.map((l) => l.replace(/^data:\s?/, "")).join("\n").trim();
-          if (dataStr && dataStr !== "[DONE]") {
-            const data = JSON.parse(dataStr);
-            const content = data.choices?.[0]?.delta?.content || "";
-            if (content) {
-              contFullResponse += content;
-              updateStreamingMessage(contFullResponse);
-            }
-          }
-        } catch (e) {
-          console.error("处理最后缓冲区失败:", e);
-        }
-      }
-
-      // 将结果写回到原始assistant消息
-      fullResponse = contFullResponse;
-      // 将后续回复作为新的assistant消息
-      if (fullResponse) finalizeMessage(fullResponse);
-    } catch (err) {
-      console.error("继续请求失败:", err);
-      dom.showError("工具后续请求失败：" + (err.message || err));
-    } finally {
-      dom.setLoading(false);
-    }
   }
 }
