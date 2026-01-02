@@ -21,20 +21,20 @@ ShowInTaskbar="False">
         </Grid.RowDefinitions>
 
         <!-- Custom header: only title and a hide button. No drag behavior. -->
-        <Border Background="Transparent" Padding="7" Grid.Row="0">
+        <Border x:Name="header" Padding="7" Grid.Row="0" Background="{ui:ThemeResource}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition/>
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="Caph" VerticalAlignment="Center" FontSize="14" Foreground="White"  Margin="10,0,0,0"/>
+                <TextBlock Text="Caph" VerticalAlignment="Center" FontSize="14" Margin="10,0,0,0"/>
                 <ui:Button x:Name="HideButton" Grid.Column="1" Width="26" Height="26" Margin="8,0,0,0" VerticalAlignment="Center" Padding="0" ToolTip="隐藏" Appearance="Transparent">
                     <TextBlock FontFamily="Segoe Fluent Icons" FontSize="15" Text="&#xE974;" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </ui:Button>
             </Grid>
         </Border>
 
-        <Wpf:WebView2 x:Name="wv" Source="http://localhost:777" Grid.Row="1" DefaultBackgroundColor="Transparent" Margin="5,0,5,5"/>
+        <Wpf:WebView2 x:Name="wv" Grid.Row="1" Source="http://localhost:777" DefaultBackgroundColor="Transparent" Grid.RowSpan="2"/>
     </Grid>
 
 </ui:FluentWindow>

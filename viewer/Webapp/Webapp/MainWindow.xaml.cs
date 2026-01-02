@@ -1,20 +1,93 @@
-﻿using System;
+﻿using Microsoft.Web.WebView2.Wpf;
+using Microsoft.Win32;
+using System;
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
-using System.Windows.Media;
-using System.Diagnostics;
-using Microsoft.Web.WebView2.Wpf;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
 
 namespace Webapp
 {
+
+    using Microsoft.Win32;
+    using System;
+    using System.Runtime.InteropServices;
+    using System.Threading.Tasks;
+
+    public class ThemeListener : IDisposable
+    {
+        private const string keyPath = @"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize";
+        private RegistryKey registryKey;
+        private IntPtr registryKeyHandle;
+        private bool disposed = false;
+
+        // Win32 API
+        [DllImport("advapi32.dll", SetLastError = true)]
+        private static extern int RegOpenKeyEx(
+            UIntPtr hKey,
+            string subKey,
+            uint options,
+            int samDesired,
+            out IntPtr phkResult);
+
+        [DllImport("advapi32.dll", SetLastError = true)]
+        private static extern int RegNotifyChangeKeyValue(
+            IntPtr hKey,
+            bool watchSubtree,
+            uint notifyFilter,
+            IntPtr hEvent,
+            bool asynchronous);
+
+        private const int KEY_READ = 0x20019;
+        private const uint REG_NOTIFY_CHANGE_LAST_SET = 0x00000004;
+
+        public event EventHandler ThemeChanged;
+
+        public ThemeListener()
+        {
+            registryKey = Registry.CurrentUser.OpenSubKey(keyPath, false);
+            // 获取底层句柄
+            RegOpenKeyEx((UIntPtr)0x80000001 /*HKEY_CURRENT_USER*/, keyPath, 0, KEY_READ, out registryKeyHandle);
+            Task.Run(() => WatchRegistry());
+        }
+
+        private void WatchRegistry()
+        {
+            while (!disposed)
+            {
+                int result = RegNotifyChangeKeyValue(
+                    registryKeyHandle,
+                    false,
+                    REG_NOTIFY_CHANGE_LAST_SET,
+                    IntPtr.Zero,
+                    false);
+
+                if (result == 0 && !disposed)
+                {
+                    ThemeChanged?.Invoke(this, EventArgs.Empty);
+                }
+            }
+        }
+
+        public void Dispose()
+        {
+            disposed = true;
+            registryKey?.Dispose();
+            if (registryKeyHandle != IntPtr.Zero)
+            {
+                Marshal.Release(registryKeyHandle);
+                registryKeyHandle = IntPtr.Zero;
+            }
+        }
+    }
     public partial class MainWindow : FluentWindow
     {
         private NotifyIcon _trayIcon;
@@ -52,12 +125,50 @@ namespace Webapp
                     false                                     // Whether to change accents automatically
                 );
             };
-            SystemThemeWatcher.Watch(this as System.Windows.Window);
+            SystemThemeWatcher.Watch(this);
 
+            ThemeListener listener = new ThemeListener();
+            listener.ThemeChanged += handle_ThemeChanged;
+            handle_ThemeChanged(this, EventArgs.Empty);
             // Initialize tray
             InitTray();
         }
 
+        private void handle_ThemeChanged(object sender, EventArgs e)
+        {
+            bool isLight = IsLightTheme();
+            if (isLight)
+            {
+                // #ffffff
+                header.Background = new SolidColorBrush(Colors.White);
+            }
+            else
+            {
+                // #222222
+                header.Background = new SolidColorBrush(Color.FromRgb(34, 34, 34));
+            }
+        }
+
+        public static bool IsLightTheme()
+        {
+            const string keyPath = @"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize";
+            const string valueName = "AppsUseLightTheme";
+
+            using (RegistryKey key = Registry.CurrentUser.OpenSubKey(keyPath))
+            {
+                if (key != null)
+                {
+                    object registryValueObject = key.GetValue(valueName);
+                    if (registryValueObject != null)
+                    {
+                        int registryValue = (int)registryValueObject;
+                        return registryValue > 0;
+                    }
+                }
+            }
+            // 默认浅色主题
+            return true;
+        }
         private void MainWindow_SourceInitialized(object sender, EventArgs e)
         {
             var icoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ico.ico");

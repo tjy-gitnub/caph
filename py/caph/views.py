@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.http.response import HttpResponse
 import subprocess
+from webbrowser import open as open_in_browser
 
 from django.views.decorators.csrf import csrf_exempt
 
@@ -15,3 +16,10 @@ def run_cmd(r):
     r=f'返回代码:\n{result.returncode}\n标准输出:\n{result.stdout}\n标准错误:\n{result.stderr}'
     print(r)
     return HttpResponse(r)
+
+@csrf_exempt
+def open_url(r):
+    # 打开指定URL
+    url = r.POST.get('url', '')
+    open_in_browser(url)
+    return HttpResponse('URL 已打开')

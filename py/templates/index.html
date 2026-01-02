@@ -33,12 +33,13 @@
 </head>
 
 <body>
+    <div id="header-cover"></div>
     <div class="app-container show" id="app">
         <div id="sidebar" class="sidebar">
             <!-- <div id="token-error" class="token-error" style="display: none;" onclick="settingManager.openSettings()">
                 请先配置 Github Token
             </div> -->
-            
+
             <div class="list">
                 <div id="export-conversation" class="a">
                     <span class="sfi">&#xE74E;</span>
@@ -48,9 +49,11 @@
             <div class="hr"></div>
             <div class="list" id="actions-list">
                 <div class="a" id="new-conversation" title="新建空对话" onclick="conversationManager.createConversation();">
-                    <span class="sfi">&#xE710;</span> 新建对话</div>
+                    <span class="sfi">&#xE710;</span> 新建对话
+                </div>
                 <div class="a" id="import-conversation" title="从本地的文件导入" onclick="$('#import-file').trigger('click');">
-                    <span class="sfi">&#xE838;</span> 从文件导入</div>
+                    <span class="sfi">&#xE838;</span> 从文件导入
+                </div>
             </div>
             <div class="list" id="conversations-list">
                 <!-- conversations.js 会渲染新对话、会话列表与操作按钮 -->
@@ -65,7 +68,7 @@
                 <div id="open-about" class="a" title="关于">
                     <span class="sfi">&#xE946;</span>
                     关于
-               </div>
+                </div>
             </div>
             <!-- <div style="margin-top: auto;padding: 5px 14px; opacity: 0.7; text-align: center;font-size: 0.9em;line-height: 1.3em;">
                 Developed by <nobr>Starry Source</nobr>
@@ -80,10 +83,11 @@
                     </div>
                 </div>
                 <div class="buttons">
-                    
-            <div id="token-error" class="token-error" style="display: none;" onclick="settingManager.openSettings()">
-                请先配置 Github Token
-            </div>
+
+                    <div id="token-error" class="token-error" style="display: none;"
+                        onclick="settingManager.openSettings()">
+                        请先配置 Github Token
+                    </div>
                     <button id="more-button" class="toolbar-button" title="更多">
                         <span class="sfi">&#xE712;</span>
                     </button>
@@ -93,8 +97,8 @@
             <div id="chat-messages" class="chat-container"></div>
 
             <div class="input-container">
-                <textarea id="message-input" class="textarea"
-                    placeholder="输入消息... (Shift + Enter 换行，Enter 发送)"></textarea>
+                <textarea id="message-input" class="textarea" placeholder="Shift + Enter 换行，Enter 发送。
+发送  &quot;/help&quot; 查看可用命令。"></textarea>
                 <div class="button-group">
                     <button id="send-button" class="button primary">
                         <span class="sfi">&#xE724;</span>
@@ -106,12 +110,12 @@
     </div>
 
     <!-- 隐藏的导入文件 input -->
-    <input type="file" id="import-file" accept=".json" style="display:none"/>
+    <input type="file" id="import-file" accept=".json" style="display:none" />
 
     <!-- 设置面板 -->
     <div id="settings-modal" aria-hidden="true">
         <div class="settings-modal">
-            <div id="settings-sidebar" >
+            <div id="settings-sidebar">
                 <div class="settings-sidebar list">
                     <div class="settings-menu-item a active section-general" data-section="general">
                         <span class="sfi">&#xE713;</span>
@@ -137,8 +141,30 @@
                     <div class="settings-form">
                         <div class="form-field">
                             <label>Github Token</label>
-                            <input type="text" class="input-field" id="setting-token" placeholder="输入你的 Github Token" oninput="$(this).removeClass('error')">
+                            <input type="text" class="input-field" id="setting-token" placeholder="输入你的 Github Token"
+                                oninput="$(this).removeClass('error')">
+                                
+                            <span style="font-size:14px;opacity: 0.7;">注意要选择 Github Models 的访问权限。</span>
                         </div>
+                        <div class="form-field">
+                            <label>系统提示词</label>
+                            <textarea class="input-field textarea" id="setting-system-prompt" rows="4"
+                                placeholder="设置与AI助手对话时的系统提示词"></textarea>
+                        </div>
+                        <div class="form-field">
+                            <label>温度 (Temperature)</label>
+                            <div class="range-field">
+                                <input type="range" id="setting-temperature" min="0" max="1" step="0.1" value="0.7">
+                                <span class="range-value">0.7</span>
+                            </div>
+                            <span style="font-size:14px;opacity: 0.7;">越低，回答越稳定。</span>
+                        </div>
+                    </div>
+                    <div class="settings-header">
+                        <h2 class="settings-title">测试用</h2>
+                    </div>
+                    <div class="settings-form">
+
                         <div class="form-field">
                             <label>颜色主题</label>
                             <select class="input-field" id="setting-theme">
@@ -146,24 +172,15 @@
                                 <option value="light">浅色</option>
                                 <option value="dark">深色</option>
                             </select>
-                        </div>
-                        <div class="form-field">
-                            <label>默认系统提示词</label>
-                            <textarea class="input-field textarea" id="setting-system-prompt" rows="4"
-                                placeholder="设置与AI助手对话时的系统提示词"></textarea>
-                        </div>
-                        <div class="form-field">
-                            <label>默认温度 (Temperature)</label>
-                            <div class="range-field">
-                                <input type="range" id="setting-temperature" min="0" max="1" step="0.1" value="0.7">
-                                <span class="range-value">0.7</span>
-                            </div>
+                            <span
+                                style="font-size:14px;opacity: 0.7;">不建议手动设置。此项只决定内容的颜色主题，程序外壳的颜色会始终跟随系统，设置此项会造成背景与内容的颜色主题不匹配。</span>
                         </div>
                         <div class="form-field">
                             <label class="checkbox-wrapper">
                                 <input type="checkbox" id="setting-stream">
                                 <span>启用流式响应</span>
                             </label>
+                            <span style="font-size:14px;opacity: 0.7;">保持勾选，不要关闭。</span>
                         </div>
                     </div>
                 </div>
@@ -174,8 +191,11 @@
                         <h2 class="settings-title">管理模型</h2>
                         <span style="font-size:14px;opacity: 0.7;">管理AI模型，添加、删除或调整顺序。</span>
                         <div style="display: flex;">
-                            <a class="lnkbtn" onclick="window.open('https:\/\/github.com/marketplace?task=chat-completion&type=models', '_blank')">浏览 Github Models</a>
-                            <a class="lnkbtn" onclick="window.open('https:\/\/docs.github.com/zh/github-models/use-github-models/prototyping-with-ai-models#rate-limits', '_blank')">浏览额度</a>
+                            <a class="lnkbtn"
+                                onclick="window.open('https:\/\/github.com/marketplace?task=chat-completion&type=models', '_blank')">浏览
+                                Github Models</a>
+                            <a class="lnkbtn"
+                                onclick="window.open('https:\/\/docs.github.com/zh/github-models/use-github-models/prototyping-with-ai-models#rate-limits', '_blank')">浏览额度</a>
                         </div>
                     </div>
                     <div class="models-grid" id="model-list">
@@ -201,17 +221,21 @@
 
     </div>
 
-    <!-- 關於彈窗 -->
+    <!-- 关于 -->
     <div id="about-modal" class="modal-overlay" style="display:none;">
         <div class="modal-box">
             <button class="modal-close small-btn" id="about-close" title="关闭"><span class="sfi">&#xE711;</span></button>
             <div class="modal-content">
                 <span style="font-size: 30px;">Caph</span>
-                <p style="color:var(--text-color); opacity:0.9;">由<a class="a textlike" href="http://tjy-gitnub.github.io/">星源</a>开发 | Developed by <a class="a textlike">Starry Source</a></p>
+                <p style="color:var(--text-color); opacity:0.9;">由<a class="a textlike"
+                        href="http://tjy-gitnub.github.io/">星源</a>开发 | Developed by <a class="a textlike">Starry
+                        Source</a></p>
                 <p>
                     AI 侧边栏工具，基于 Github Models。
                 </p>
-                <p style="margin-top:12px; font-size:13px; opacity:0.8;">开源于 Github <a class="a textlike" href="https://github.com/tjy-gitnub">tjy-gitnub</a> / <a class="a textlike" href="https://github.com/tjy-gitnub/caph">caph</a></p>
+                <p style="margin-top:12px; font-size:13px; opacity:0.8;">开源于 Github <a class="a textlike"
+                        href="https://github.com/tjy-gitnub">tjy-gitnub</a> / <a class="a textlike"
+                        href="https://github.com/tjy-gitnub/caph">caph</a></p>
             </div>
         </div>
     </div>
