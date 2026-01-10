@@ -40,13 +40,13 @@
                 请先配置 Github Token
             </div> -->
 
-            <div class="list">
+            <!-- <div class="list">
                 <div id="export-conversation" class="a">
                     <span class="sfi">&#xE74E;</span>
                     导出当前对话
                 </div>
             </div>
-            <div class="hr"></div>
+            <div class="hr"></div> -->
             <div class="list" id="actions-list">
                 <div class="a" id="new-conversation" title="新建空对话" onclick="conversationManager.createConversation();">
                     <span class="sfi">&#xE710;</span> 新建对话
@@ -61,10 +61,10 @@
             <div class="hr"></div>
 
             <div class="list">
-                <div id="open-settings" class="a">
+                <!-- <div id="open-settings" class="a">
                     <span class="sfi">&#xE713;</span>
                     设置
-                </div>
+                </div> -->
                 <div id="open-about" class="a" title="关于">
                     <span class="sfi">&#xE946;</span>
                     关于
@@ -78,9 +78,9 @@
         <main class="main-content">
             <header class="chat-header" id="chat-header">
                 <div class="model-selector">
-                    <div id="current-model">
+                    <!-- <div id="current-model">
                         <span>?</span>
-                    </div>
+                    </div> -->
                 </div>
                 <div class="buttons">
 
@@ -88,6 +88,13 @@
                         onclick="settingManager.openSettings()">
                         请先配置 Github Token
                     </div>
+                    <button id="export-conversation" class="toolbar-button" title="导出当前对话">
+                        <span class="sfi">&#xE74E;</span>
+                        导出
+                    </button>
+                    <button id="open-settings" class="toolbar-button" title="设置">
+                        <span class="sfi">&#xE713;</span>
+                    </button>
                     <button id="more-button" class="toolbar-button" title="更多">
                         <span class="sfi">&#xE712;</span>
                     </button>
@@ -96,14 +103,25 @@
 
             <div id="chat-messages" class="chat-container"></div>
 
-            <div class="input-container">
+            <div class="input-container textarea-like" id="input-container">
                 <textarea id="message-input" class="textarea" placeholder="Shift + Enter 换行，Enter 发送。
 发送  &quot;/help&quot; 查看可用命令。"></textarea>
-                <div class="button-group">
-                    <button id="send-button" class="button primary">
-                        <span class="sfi">&#xE724;</span>
-                        发送
-                    </button>
+                <div class="input-buttons">
+                    <div style="margin-left: 3px;" left>
+                        <div id="current-model" class="a">
+                            <span>?</span>
+                        </div>
+                        <button id="toggle-tool" class="button toolbar-button" title="使用工具">
+                            <span class="sfi">&#xE90F;</span>
+                        </button>
+                        
+                    </div>
+                    <div right>
+                        <button id="send-button" class="a button primary">
+                            <span class="sfi">&#xE724;</span>
+                            发送
+                        </button>
+                    </div>
                 </div>
             </div>
         </main>
@@ -143,12 +161,12 @@
                             <label>Github Token</label>
                             <input type="text" class="input-field" id="setting-token" placeholder="输入你的 Github Token"
                                 oninput="$(this).removeClass('error')">
-                                
+
                             <span style="font-size:14px;opacity: 0.7;">注意要选择 Github Models 的访问权限。</span>
                         </div>
                         <div class="form-field">
                             <label>系统提示词</label>
-                            <textarea class="input-field textarea" id="setting-system-prompt" rows="4"
+                            <textarea class="input-field textarea textarea-like" id="setting-system-prompt" rows="4"
                                 placeholder="设置与AI助手对话时的系统提示词"></textarea>
                         </div>
                         <div class="form-field">

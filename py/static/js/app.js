@@ -61,6 +61,8 @@ document.addEventListener("DOMContentLoaded", () => {
     startOnLoad: false,
     theme: "default",
   });
+
+
 });
 
 /**
@@ -214,7 +216,7 @@ async function updateStreamingMessage(content) {
 
     // 更新内容
     $content.html(processedContent);
-    
+
     contentProcessor.renderMath($content[0]);
     contentProcessor.highlightCode($content);
 
@@ -394,21 +396,27 @@ async function sendToServer() {
     const headers = new Headers();
     headers.append("Content-Type", "application/json");
     if (ghtoken) headers.append("Authorization", `Bearer ${ghtoken}`);
-
+    else {
+      throw new Error("未设置 GitHub Token。请前往设置页面输入你的 GitHub Token。");
+    }
 
     const enabledTools = av_tools.filter(t => {
       return !settings_data.tools_disabled[t.function.name];
     });
+    const enableTool = localStorage.getItem("enableTool") === "true";
+    let req_body = {
+      messages,
+      model: modelToUse,
+      temperature,
+      stream: settings_data.stream ?? true,
+    };
+    if (enableTool && enabledTools.length > 0) {
+      req_body.tools = enabledTools;
+    }
     const response = await fetch(`${ENDPOINT}/chat/completions`, {
       method: "POST",
       headers,
-      body: JSON.stringify({
-        messages,
-        model: modelToUse,
-        temperature,
-        tools: enabledTools,
-        stream: settings_data.stream ?? true,
-      }),
+      body: JSON.stringify(req_body),
     });
 
     if (!response.ok) {
@@ -517,16 +525,16 @@ async function sendToServer() {
               isUser: false,
               role: "assistant",
               content: fullResponse || "",
-              tool_calls:[
-                  {
-                    function: {
-                      name: toolCallBuffer[toolIndex].name,
-                      arguments: toolCallBuffer[toolIndex].arguments || ""
-                    },
-                    type: "function", index: toolIndex,
-                    id: aNewToolCallId(),
+              tool_calls: [
+                {
+                  function: {
+                    name: toolCallBuffer[toolIndex].name,
+                    arguments: toolCallBuffer[toolIndex].arguments || ""
                   },
-                ],
+                  type: "function", index: toolIndex,
+                  id: aNewToolCallId(),
+                },
+              ],
               timestamp: new Date().toISOString(),
               model: currentModel,
             };
@@ -663,6 +671,7 @@ async function sendToServer() {
 
         if (data.choices?.[0]?.finish_reason === "tool_calls") {
           console.log("Pausing for", toolCallBuffer.length, "tool calls");
+          dom.enableToolCardActions(toolCardEl);
           if (toolCallBuffer.length > 1) {
             // 整理多个工具卡片
             dom.arrangeMultipleToolCards(toolCallBuffer.length);

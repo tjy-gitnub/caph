@@ -7,22 +7,43 @@
 
 用于 Windows 的桌面 Copilot 助手的平替。
 
-可使用 Github Models 的免费模型（有额度）
+可使用 Github Models 的免费模型（含 deepseek, gpt4o, gpt4.1 等，有额度）
 
-支持调用工具，帮助操作电脑。
-
-![](./art/image.png)
+支持多种格式渲染，支持工具调用。(详见 [功能](#功能))
 
 （请以实际界面和功能为准）
 
-## 使用说明
-### 普通使用
+![](./art/image.png)
+![](./art//setting.png)
+
+
+## 普通使用
 
 在页面右侧 Release 中下载最新版，即可使用。
 
+## 功能
+
+- AI 聊天
+    - md 渲染
+    - 代码渲染
+    - 流程图、思维导图渲染
+    - svg 图像渲染
+    - 对话内容编辑
+- AI 模型
+    - Github API 适配
+    - 多模型管理
+- 多对话管理
+    - 历史管理
+    - 文件导入、导出
+- 工具调用
+    - 工具管理
+    - 自定义工具（要有环境以生成，见下）
+
+## 生成与运行
+
 ### 生成
 
-1. 使用 Visual Studio 生成（WPF 应用，项目解决方案在 `/viewer/Webapp.sln`）。
+1. 使用 Visual Studio 生成（WPF 应用，项目解决方案在 `/viewer/Webapp/Webapp.sln`）。
 2. 需要有 python（3.9 最佳），安装 django。
 
 ### 运行
@@ -35,4 +56,4 @@
 
 ### 自定义工具
 
-在 `/py/caph/static/tools.js` 中，具体参见注释说明。
+在 `/py/static/tools.js` 中，具体参见注释说明。

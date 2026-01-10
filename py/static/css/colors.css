@@ -38,15 +38,15 @@
     --text-color: #000000;
     --border-color: #00000015;
     --hover-color: #dddddd90;
-    --message-user-bg: #b4dbffa0;
-    --message-bot-bg: #ffffffb7;
+    --message-user-bg: #b7e4ffc0;
+    --message-bot-bg: #ffffffcf;
     --shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
     --list: #5555551a;
 }
 
 [data-theme="dark"] {
     --primary-color: #61ccff;
-    --primary-hover: #399cc9;
+    --primary-hover: #7ed6ff;
     --bg-color: #2b2b2b;
     --card-bg: #1b1b1bc0;
     --input: #222;

@@ -11,7 +11,7 @@ class Dom {
 
     $content.after(`
             <div class="edit-container">
-                <textarea class="edit-input textarea">${originalContent}</textarea>
+                <textarea class="edit-input textarea textarea-like">${originalContent}</textarea>
                 <div class="edit-tools">
                     <button class="toolbar-button save" title="保存">
                         <span class="sfi">&#xE8FB;</span>
@@ -78,6 +78,7 @@ class Dom {
 
   setLoading(loading) {
     isProcessing = loading;
+    $("#input-container").toggleClass("loading", loading);
     $("#send-button").prop("disabled", loading);
   }
 
@@ -312,7 +313,8 @@ class Dom {
     );
   }
 
-  showModelDropdown(targetEl) {
+  
+  showModelDropdown(targetEl, input_container = false) {
     if ($(".model-dropdown").length) {
       $(".model-dropdown").remove();
       return;
@@ -343,20 +345,39 @@ class Dom {
       "><span class="sfi">&#xF0E2;</span>管理模型</a>
       <a class="lnkbtn" onclick="window.open('https://docs.github.com/zh/github-models/use-github-models/prototyping-with-ai-models#rate-limits', '_blank')">Github 模型额度</a>
     </div>`);
-    $("body").append($dropdown);
-    const rect = targetEl.getBoundingClientRect();
-    $dropdown.css({ top: rect.bottom + 5 + "px" });
+    if (input_container) {
+      console.log('a');
+      $("#chat-messages").after($dropdown);
+    } else {
+      $("body").append($dropdown);
+      const rect = targetEl.getBoundingClientRect();
+      $dropdown.css({ top: rect.bottom + 5 + "px" });
+    }
   }
+
 
   // 更新事件监听
   setupEventListeners() {
     $("#send-button").click(() => handleSendMessage());
+
     $("#message-input").on("keypress", (e) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         if (!isProcessing) handleSendMessage();
       }
     });
+
+    if(localStorage.getItem("enableTool")===null){
+      localStorage.setItem("enableTool","true");
+    }
+    $("#toggle-tool").toggleClass("primary",localStorage.getItem("enableTool")==="true");
+
+    $("#toggle-tool").on("click",function(){
+      $(this).toggleClass("primary");
+      const enabled=$(this).hasClass("primary");
+      localStorage.setItem("enableTool",enabled?"true":"false");
+    });
+
     // 加载模型列表
     this.loadModels();
 
@@ -398,7 +419,7 @@ class Dom {
     // 点击当前模型显示模型下拉（从 settings.models 中读取）
     $("#current-model").on("click", (e) => {
       // e.stopPropagation();
-      this.showModelDropdown(e.currentTarget);
+      this.showModelDropdown(e.currentTarget, true);
     });
 
     // 导出当前会话按钮（header 中的按钮，见 HTML）
@@ -523,8 +544,8 @@ class Dom {
         </div>
         <div class="message-content" style="white-space:pre-wrap;">${argsText}</div>
         <div class="actions">
-          <button class="button primary tool-approve" title="同意">同意</button>
-          <button class="button tool-cancel" title="拒绝">拒绝</button>
+          <button class="button primary tool-approve" title="同意" disabled>同意</button>
+          <button class="button tool-cancel" title="拒绝" disabled>拒绝</button>
         </div>
       </div>
     `);
@@ -585,6 +606,12 @@ class Dom {
       }
     }
     $card.remove();
+  }
+
+  enableToolCardActions(cardlist){
+    cardlist.forEach(($card) => {
+      $card.find(".tool-approve,.tool-cancel").prop("disabled", false);
+    });
   }
 
   arrangeMultipleToolCards(num) {
