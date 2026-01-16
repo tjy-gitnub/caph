@@ -3,6 +3,7 @@ const dom = new Dom();
 chatHistory = []; // 当前对话消息历史
 isProcessing = false; // 消息处理状态标志
 editingMessageId = null; // 正在编辑的消息ID
+abortController = null; // 用于取消请求的 AbortController
 
 window.settingManager = new Settings();
 
@@ -103,6 +104,11 @@ function createMessage(content, isUser) {
  * 处理发送消息
  */
 async function handleSendMessage() {
+  if (abortController) {
+    abortController.abort();
+    abortController = null;
+    return;
+  }
   const input = $("#message-input");
   const content = input.val().trim();
   if (!content) return;
@@ -413,10 +419,12 @@ async function sendToServer() {
     if (enableTool && enabledTools.length > 0) {
       req_body.tools = enabledTools;
     }
+    abortController = new AbortController();
     const response = await fetch(`${ENDPOINT}/chat/completions`, {
       method: "POST",
       headers,
       body: JSON.stringify(req_body),
+      signal: abortController.signal,
     });
 
     if (!response.ok) {
@@ -706,8 +714,14 @@ async function sendToServer() {
     // 完成消息
     if (fullResponse) finalizeMessage(fullResponse);
   } catch (error) {
-    console.error("请求失败", error);
-    dom.showError(error.message || "服务器连接失败，请稍后重试");
+    if (error.name === 'AbortError') {
+      if (fullResponse) {
+        finalizeMessage(fullResponse + '\n[已终止]');
+      }
+    } else {
+      console.error("请求失败", error);
+      dom.showError(error.message || "请求失败");
+    }
   } finally {
     dom.setLoading(false);
   }

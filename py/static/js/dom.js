@@ -79,7 +79,9 @@ class Dom {
   setLoading(loading) {
     isProcessing = loading;
     $("#input-container").toggleClass("loading", loading);
-    $("#send-button").prop("disabled", loading);
+    $('#send-button').toggleClass('red', loading)
+      .html(loading ? '<span class="sfi">&#xEE95;</span> 停止' : '<span class="sfi">&#xE724;</span> 发送');
+    // $("#send-button").prop("disabled", loading);
   }
 
   // 加载模型列表

@@ -454,7 +454,7 @@ body {
     max-height: calc(100vh - 500px) !important;
     overflow: hidden;
     position: relative;
-    border:none;
+    border: none;
 }
 
 @property --angle {
@@ -467,13 +467,14 @@ body {
     0% {
         --angle: 0deg;
     }
+
     100% {
         --angle: 360deg;
     }
 }
 
-#input-container::after{
-    
+#input-container::after {
+
     --c1: #1cd9ff;
     --c2: #8a84ff;
     --c3: #f260ff;
@@ -485,9 +486,9 @@ body {
     width: calc(100% - var(--accent-border-width) * 1.5);
     top: 0;
     left: 0;
-    
+
     --angle: 0deg;
-    
+
     animation-name: tile-border-tile-border-rotate;
     animation-iteration-count: infinite;
     animation-duration: 2s;
@@ -495,26 +496,26 @@ body {
 
     border-radius: 10px;
     border: solid var(--accent-border-width) transparent;
-    transition: 200ms,filter 300ms 300ms;
-    background: conic-gradient(from var(--angle),var(--c1),var(--c2),var(--c3),var(--c1)) border-box;
-    -webkit-mask: linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0);
-    mask: linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0);
+    transition: 200ms, filter 300ms 300ms;
+    background: conic-gradient(from var(--angle), var(--c1), var(--c2), var(--c3), var(--c1)) border-box;
+    -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     z-index: 1;
 }
 
-#input-container>*{
+#input-container>* {
     z-index: 2;
 }
 
-#input-container.loading::after{
+#input-container.loading::after {
     opacity: 1;
 }
 
 
-#input-container:has(.textarea:focus){
-    background-color: var(--input);
+#input-container:has(.textarea:focus) {
+    background-color: var(--inp);
     /* outline: 2px solid var(--primary-color); */
 }
 
@@ -666,6 +667,7 @@ main.main-content>.model-dropdown {
     border: none;
 }
 
+
 .button[disabled] {
     pointer-events: none;
     opacity: 0.6;
@@ -677,6 +679,16 @@ main.main-content>.model-dropdown {
 
 .button.primary:hover {
     background: var(--primary-hover);
+}
+
+.button.red {
+    background: var(--red);
+    color: #fff;
+    border: none;
+}
+
+.button.red:hover {
+    background: var(--bright-red);
 }
 
 .button:active {
@@ -870,7 +882,7 @@ loading>svg {
     padding: 6px 12px;
     border-radius: 6px;
     background-color: #ff6d6d30;
-    color: #ff4444;
+    color: var(--red);
     font-size: 13px;
     line-height: 1.5;
     text-align: center;
@@ -1125,7 +1137,7 @@ loading>svg {
     }
 } */
 
-/* 關於彈窗樣式 */
+/* 关于 */
 .modal-overlay {
     position: fixed;
     inset: 0;
@@ -1194,6 +1206,10 @@ loading>svg {
     text-wrap: nowrap;
     cursor: default;
     transition: 100ms;
+
+    >* {
+        user-select: none !important;
+    }
 
     >.name {
         font-weight: bold;

@@ -1,6 +1,6 @@
 
 .message > .message-content, .message > .message-content * {
-    user-select: text !important;
+    user-select:text;
 }
 
 .message > .message-content::selection {
@@ -8,6 +8,21 @@
     color: var(--input);
 }
 
+.message-content .stopped-label{
+    border: 2px solid var(--bright-red);
+    /* background-color: ; */
+    background: #ff6d6d30;
+    opacity: 0.9;
+    /* color: var(--red); */
+    user-select: none;
+    margin-top: 3px;
+    font-size: 0.9em;
+    padding: 3px 10px;
+    display: flex;
+    width: max-content;
+    align-items: center;
+    border-radius: 100px;
+}
 
 /* Markdown 内容样式 */
 
@@ -122,6 +137,7 @@
 .fold-title {
     font-size: 14px;
     color: var(--text-color);
+    user-select: none !important;
     /* opacity: 0.7; */
 }
 

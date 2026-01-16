@@ -35,6 +35,7 @@
     --bg-color: #f8f8f8;
     --card-bg: #ffffffc0;
     --input: #fff;
+    --inp: #fff;
     --text-color: #000000;
     --border-color: #00000015;
     --hover-color: #dddddd90;
@@ -42,6 +43,8 @@
     --message-bot-bg: #ffffffcf;
     --shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
     --list: #5555551a;
+    --red: #df4739;
+    --bright-red: #ff6659;
 }
 
 [data-theme="dark"] {
@@ -50,6 +53,7 @@
     --bg-color: #2b2b2b;
     --card-bg: #1b1b1bc0;
     --input: #222;
+    --inp: #111;
     --text-color: #f5f5f5;
     --border-color: #cccccc42;
     --hover-color: #cecece30;

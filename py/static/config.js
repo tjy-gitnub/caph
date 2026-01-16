@@ -1,17 +1,16 @@
 const ENDPOINT = "https://models.github.ai/inference";
 
 const GITHUB_TOKEN = "__your_gh_token__";
-// 你的 token，确保有 AI 模型的 read 权限
+// 你的 token，确保有 AI 模型的 read 权限，也可以在设置中填写
 
 const DEFAULT_MODEL = "openai/gpt-4.1";
 
-// 新增：默认设置（供设置面板使用）
 const DEFAULT_SETTINGS = {
   systemPrompt:
     `你是一个桌面 AI 助手，帮助用户处理事务、回答用户问题等。
 除了特殊情况外，请尽量缩减回答的长度，精简内容，避免过多不必要的描述。请和用户人性化地交流。
 
-在用户要求协助或帮助完成任务时，请使用提供的工具。你可以一次调用多个工具。
+在用户要求帮助完成操作任务时，请使用提供的工具。你可以一次调用多个工具。
 为了用户体验，在要求明确的情况下，请直接调用工具，不必确认询问。如果要运行极高风险的指令，则要在调用的同时，向用户说明解释。
 在调用工具时，系统会向用户确认，因此你不必询问用户。
 
@@ -31,5 +30,5 @@ const DEFAULT_SETTINGS = {
     "openai/gpt-4o-mini": "GPT 4o mini",
     "meta/Llama-4-Scout-17B-16E-Instruct": "Llama 4 Scout",
     "meta/Llama-4-Maverick-17B-128E-Instruct-FP8": "Llama 4 Maverick",
-  }, // 初始可编辑模型列表（UI可修改并保存至localStorage）
+  }, // 初始可编辑模型列表（设置中可修改，会保存至 localStorage）
 };

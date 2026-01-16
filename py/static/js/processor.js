@@ -2,7 +2,7 @@ class ContentProcessor {
   constructor() {
     // 初始化 marked
     marked.setOptions({
-      breaks: false,
+      breaks: true, // 正确展示换行
       highlight: function (code, lang) {
         return code;
       },
@@ -31,7 +31,7 @@ class ContentProcessor {
       content = String(content || "");
 
       // 1. 处理 think 内容
-      content = this.processThinkContent(content);
+      content = this.processSpecialContent(content);
 
       // 2. Markdown 渲染，此时特殊代码块被保护
       content = marked.parse(content);
@@ -46,9 +46,9 @@ class ContentProcessor {
     }
   }
 
-  processThinkContent(content) {
+  processSpecialContent(content) {
     if (!content) return "";
-    return content.replace(
+    return content.replace(/\[已终止\]$/, '<span class="stopped-label">已终止</span>').replace(
       /<think>([\s\S]*?)<\/think>|<think>([\s\S]*?)$/g,
       (match, closed, open) => {
         const thinkContent = closed || open || "";
