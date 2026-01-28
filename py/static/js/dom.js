@@ -78,9 +78,15 @@ class Dom {
 
   setLoading(loading) {
     isProcessing = loading;
+    if (loading) {
+      pausingForToolCall = false;
+      $('#send-button,#toggle-tool').removeAttr('disabled');
+    }
     $("#input-container").toggleClass("loading", loading);
-    $('#send-button').toggleClass('red', loading)
-      .html(loading ? '<span class="sfi">&#xEE95;</span> 停止' : '<span class="sfi">&#xE724;</span> 发送');
+    if (!pausingForToolCall)
+      $('#send-button').toggleClass('red', loading)
+        .html(loading ? '<span class="sfi">&#xEE95;</span> 停止' : '<span class="sfi">&#xE724;</span> 发送');
+    $('#open-settings,#more-button,.message-toolbar>.toolbar-button,#open-about').prop('disabled', isProcessing || pausingForToolCall);
     // $("#send-button").prop("disabled", loading);
   }
 
@@ -114,11 +120,11 @@ class Dom {
           </div>`)
         );
       $("#chat-header").addClass("greeting");
-      this.setLoading(true);
+      $('#send-button,#export-conversation').attr('disabled', true);
       return;
     } else {
       $("#chat-header").removeClass("greeting");
-      this.setLoading(false);
+      $('#send-button,#export-conversation').removeAttr('disabled');
     }
     // 更新当前模型和局部设置显示
     currentModel = active.model || defaultModel;
@@ -202,17 +208,22 @@ class Dom {
     } else if (message.role === 'tool') {
       processedContent = `<div class="fold-content collapsed" onclick="if($(this).hasClass('collapsed')) $(this).find('.fold-toggle').click();">
                     <div class="fold-header">
-                        <span class="fold-title">返回结果</span>
+                        <span class="fold-title">调用详细</span>
                         <button class="fold-toggle" onclick="$(this.parentElement.parentElement).toggleClass('collapsed');$(this).find('.sfi').toggleClass('down');event.stopPropagation();">
                             <span class="sfi chevron-down">&#xE70D;</span>
                         </button>
                     </div>
-                    <pre class="fold-body tool-result">${processedContent}</pre>
+                    <div class="fold-body">
+                      <div class="tool-description">
+                          ${message.description}
+                      </div>
+                      <pre class="tool-result">${processedContent}</pre>
+                    </div>
                 </div>`
       $content.html(processedContent);
     } else {
       if (Array.isArray(message.tool_calls) && message.tool_calls.length) {
-        const name = message.tool_calls.length>1?message.tool_calls.length+'个':message.tool_calls[0].function.name;
+        const name = message.tool_calls.length > 1 ? message.tool_calls.length + '个' : message.tool_calls[0].function.name;
         processedContent += `<div class="inline-tool"><span class=sfi>&#xE90F;</span><span>使用工具</span><span class=name>${name}</span></div>`;
         // 不渲染数学公式或代码高亮（工具调用的内容由卡片展示）
         // this.bindMessageToolbarEvents($message, message);
@@ -315,7 +326,7 @@ class Dom {
     );
   }
 
-  
+
   showModelDropdown(targetEl, input_container = false) {
     if ($(".model-dropdown").length) {
       $(".model-dropdown").remove();
@@ -369,15 +380,15 @@ class Dom {
       }
     });
 
-    if(localStorage.getItem("enableTool")===null){
-      localStorage.setItem("enableTool","true");
+    if (localStorage.getItem("enableTool") === null) {
+      localStorage.setItem("enableTool", "true");
     }
-    $("#toggle-tool").toggleClass("primary",localStorage.getItem("enableTool")==="true");
+    $("#toggle-tool").toggleClass("primary", localStorage.getItem("enableTool") === "true");
 
-    $("#toggle-tool").on("click",function(){
+    $("#toggle-tool").on("click", function () {
       $(this).toggleClass("primary");
-      const enabled=$(this).hasClass("primary");
-      localStorage.setItem("enableTool",enabled?"true":"false");
+      const enabled = $(this).hasClass("primary");
+      localStorage.setItem("enableTool", enabled ? "true" : "false");
     });
 
     // 加载模型列表
@@ -589,7 +600,7 @@ class Dom {
       $state.text("等待确认");
     } else if (state === "loading") {
       $state.text("执行中...");
-    }else if (state === "done") {
+    } else if (state === "done") {
       $state.text("已完成");
       $card.removeClass("waiting-confirmation");
     }
@@ -598,8 +609,8 @@ class Dom {
   updateToolCardResultWithDone($card) {
     if ($('.multiple-tool-calls').length) {
       console.log('Updating multiple tool calls card');
-      const $count=$('.multiple-tool-calls').find('.tool-count');
-      if(parseInt($count.text())>1)
+      const $count = $('.multiple-tool-calls').find('.tool-count');
+      if (parseInt($count.text()) > 1)
         $count.text(
           parseInt($count.text()) - 1
         );
@@ -610,16 +621,18 @@ class Dom {
     $card.remove();
   }
 
-  enableToolCardActions(cardlist){
+  pauseForToolCall(cardlist) {
     cardlist.forEach(($card) => {
       $card.find(".tool-approve,.tool-cancel").prop("disabled", false);
     });
+    pausingForToolCall = true;
+    $('#send-button,#toggle-tool').prop('disabled', true);
   }
 
   arrangeMultipleToolCards(num) {
     const $total = $(`
       <div class="multiple-tool-calls">
-        <div class="text">待确认：<span class="tool-count">${num}</span> 个工具调用</div>
+        <div class="text"><span class="tool-count">${num}</span> 个工具调用</div>
         <div class="actions">
           <button class="button primary tool-approve-all" title="同意全部">同意全部</button>
           <button class="button tool-cancel-all" title="拒绝全部">拒绝全部</button>

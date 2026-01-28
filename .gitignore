@@ -35,3 +35,6 @@ local_settings.py
 *.log
 node_modules/
 
+/ico.svg
+/icolight.svg
+/caphico.pptx

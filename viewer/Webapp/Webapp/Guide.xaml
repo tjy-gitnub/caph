@@ -1,0 +1,25 @@
+﻿<ui:FluentWindow xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+xmlns:local="clr-namespace:Webapp"
+x:Class="Webapp.Guide"
+mc:Ignorable="d"
+xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+Width="950" Height="600"
+xmlns:cef="clr-namespace:CefSharp.Wpf;assembly=CefSharp.Wpf"
+Icon="/caph.ico"
+Title="使用指南" WindowBackdropType="Acrylic" ExtendsContentIntoTitleBar="True" KeyDown="FluentWindow_KeyDown">
+    <Grid>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar Title="使用指南">
+        </ui:TitleBar>
+        <cef:ChromiumWebBrowser x:Name="cefbguide" Grid.Row="1" Address="http://localhost:777/guide"/>
+    </Grid>
+
+</ui:FluentWindow>

@@ -5,13 +5,15 @@ class Settings {
   }
 
   getSettings(){
-    return JSON.parse(
-      localStorage.getItem("chatSettings") || "null"
-    ) || {
-      systemPrompt:
-        typeof DEFAULT_SETTINGS.systemPrompt
-          ? DEFAULT_SETTINGS.systemPrompt
-          : "用中文回答。使用标准的Markdown格式。",
+    let ret={
+      simplePrompt:
+        typeof DEFAULT_SETTINGS.simplePrompt
+          ? DEFAULT_SETTINGS.simplePrompt
+          : '',
+      toolCallPrompt:
+        typeof DEFAULT_SETTINGS.toolCallPrompt
+          ? DEFAULT_SETTINGS.toolCallPrompt
+          : '',
       temperature:
         typeof DEFAULT_SETTINGS.temperature
           ? DEFAULT_SETTINGS.temperature
@@ -34,6 +36,15 @@ class Settings {
           : AVAILABLE_MODELS,
       tools_disabled: {},
     };
+
+    const savedSettings = JSON.parse(
+      localStorage.getItem("chatSettings"));
+    for (const key in ret) {
+      if (savedSettings && key in savedSettings) {
+        ret[key] = savedSettings[key];
+      }
+    }
+    return ret;
   }
 
   // 设置相关方法
@@ -45,7 +56,8 @@ class Settings {
     } else {
       $("#setting-token").removeClass("error");
     }
-    $("#setting-system-prompt").val(settings_data.systemPrompt || "");
+    $("#setting-simple-prompt").val(settings_data.simplePrompt || "");
+    $('#setting-toolcall-prompt').val(settings_data.toolCallPrompt || "");
     $("#setting-temperature")
       .val(settings_data.temperature || 0.7)
       .trigger("input");
@@ -74,7 +86,8 @@ class Settings {
   async saveSettings() {
     const newSettings = {
       ...settings_data,
-      systemPrompt: $("#setting-system-prompt").val(),
+      simplePrompt: $("#setting-simple-prompt").val(),
+      toolCallPrompt: $('#setting-toolcall-prompt').val(),
       temperature: parseFloat($("#setting-temperature").val()),
       stream: $("#setting-stream").prop("checked"),
       autoTheme: $("#setting-theme").val() === "auto",

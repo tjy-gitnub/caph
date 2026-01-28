@@ -1,24 +1,41 @@
 @echo off
-echo ¿ªÊ¼´ò°ü
+echo å¼€å§‹æ‰“åŒ…
 if not exist "..\pack" mkdir "..\pack"
 if not exist "..\pack\_" mkdir "..\pack\_"
 
-rem ¸´ÖÆ runtimes Õû¸öÎÄ¼ş¼Ğ
-robocopy "..\viewer\Webapp\Webapp\bin\Release\runtimes" "..\pack\_\runtimes" /E
+rem åªå¤åˆ¶æŒ‡å®šè¯­è¨€çš„ .pak æ–‡ä»¶ï¼ˆæ–‡ä»¶åä¿ç•™ï¼Œä¸ä¿ç•™åŸè·¯å¾„ï¼‰
+if not exist "..\pack\_\locales" mkdir "..\pack\_\locales"
+setlocal enabledelayedexpansion
+set "LANGS=en-US zh-CN zh-TW"
+set "SUFS=. _FEMININE _MASCULINE _NEUTER"
 
-rem ¸´ÖÆ Release ¸ùÄ¿Â¼ÏÂµÄÎÄ¼ş£¬ÅÅ³ıÖ¸¶¨À©Õ¹Ãû£¨²»µİ¹é×ÓÄ¿Â¼£©
-robocopy "..\viewer\Webapp\Webapp\bin\Release" "..\pack\_" /XF *.config *.pdb *.xml *.application *.manifest /XD "..\viewer\Webapp\Webapp\bin\Release\runtimes"
+for %%L in (%LANGS%) do (
+    for %%S in (%SUFS%) do (
+        set "SF=%%S"
+        if "!SF!"=="." set "SF="
+        set "FNAME=%%L!SF!.pak"
+        if exist "..\viewer\Webapp\Webapp\bin\Release\locales\!FNAME!" (
+            copy /y "..\viewer\Webapp\Webapp\bin\Release\locales\!FNAME!" "..\pack\_\locales\" >nul
+        )
+    )
+)
 
-@REM ¸´ÖÆÆô¶¯´úÂë
+endlocal
+
+
+rem å¤åˆ¶ Release æ ¹ç›®å½•ä¸‹çš„æ–‡ä»¶ï¼Œæ’é™¤æŒ‡å®šæ‰©å±•åï¼ˆä¸é€’å½’å­ç›®å½•ï¼‰
+robocopy "..\viewer\Webapp\Webapp\bin\Release" "..\pack\_" /XF *.config *.pdb *.xml *.application *.manifest *.log /XD "..\viewer\Webapp\Webapp\bin\Release\locales"
+
+@REM å¤åˆ¶å¯åŠ¨ä»£ç 
 copy /y .\caph.spec ..\py\caph.spec
 copy /y .\startup.py ..\py\caph.py
 copy /y .\start.bat ..\pack\start.bat
 cd ..\py
-@REM ´ò°ü
+@REM æ‰“åŒ…
 pyinstaller caph.spec --noconfirm
 copy /y .\dist\caph.exe ..\pack\_\caph.exe
-echo py´ò°üÍê³É
-@REM ÇåÀíÁÙÊ±ÎÄ¼ş
+echo pyæ‰“åŒ…å®Œæˆ
+@REM æ¸…ç†ä¸´æ—¶æ–‡ä»¶
 rd /s /q build
 rd /s /q dist
 del caph.spec

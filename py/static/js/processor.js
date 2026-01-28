@@ -29,12 +29,20 @@ class ContentProcessor {
     try {
       // 确保输入是字符串
       content = String(content || "");
+      
+      // 1. 处理特殊标记
 
-      // 1. 处理 think 内容
+      content = content.replace(/\$([\s\S]+?)\$\$?/g, (match, p1) => {
+        console.log(match);
+        return `<protected-block type="math">${this.escapeHtml(match)}</protected-block>`;
+      });
+
       content = this.processSpecialContent(content);
+
 
       // 2. Markdown 渲染，此时特殊代码块被保护
       content = marked.parse(content);
+
 
       // 3. 处理被保护的代码块
       content = await this.processProtectedBlocks(content);
@@ -47,11 +55,13 @@ class ContentProcessor {
   }
 
   processSpecialContent(content) {
+    // 终止符与深度思考
     if (!content) return "";
     return content.replace(/\[已终止\]$/, '<span class="stopped-label">已终止</span>').replace(
       /<think>([\s\S]*?)<\/think>|<think>([\s\S]*?)$/g,
       (match, closed, open) => {
         const thinkContent = closed || open || "";
+        // console.log(thinkContent);
         return `<div class="fold-content ${closed ? "collapsed" : "thinking"}" onclick="if($(this).hasClass('collapsed')) $(this).find('.fold-toggle').click();">
                     <div class="fold-header">
                         <span class="fold-title">深度思考</span>
@@ -59,7 +69,7 @@ class ContentProcessor {
                             <span class="sfi ${closed ? "chevron-down" : "chevron-up"}">${closed ? "&#xE70D;" : "&#xE70E;"}</span>
                         </button>
                     </div>
-                    <div class="fold-body">${thinkContent}</div>
+                    <div class="fold-body">${marked.parse(thinkContent)}</div>
                 </div>`;
       }
     );
@@ -73,7 +83,7 @@ class ContentProcessor {
 
     while ((match = regex.exec(content)) !== null) {
       const [fullMatch, type, code] = match;
-      const decodedCode = this.unescapeHtml(code);
+      const decodedCode = this.unescapeHtml(code).replace(/\<br\>/g, '\n');
       let replacement = "";
 
       try {
@@ -82,9 +92,12 @@ class ContentProcessor {
           replacement = this.wrapInPreview("Mermaid", decodedCode, svg);
         } else if (type === "svg") {
           replacement = this.wrapInPreview("SVG", decodedCode, decodedCode);
+        }else{
+          replacement=decodedCode;
+          console.log(fullMatch,type,decodedCode)
         }
       } catch (err) {
-        console.error(`${type} 渲染失败:`, err);
+        // console.error(`${type} 渲染失败:`, err);
         replacement = this.wrapInPreview(
           `${type} (渲染失败)`,
           decodedCode,
@@ -92,7 +105,7 @@ class ContentProcessor {
         );
       }
 
-      processedContent = processedContent.replace(fullMatch, replacement);
+      processedContent = processedContent.replace(fullMatch, () => replacement); // js 的奇妙思路，直接用字符串传参会被误解析
     }
 
     return processedContent;
@@ -154,6 +167,7 @@ class ContentProcessor {
 
   // 添加数学公式渲染方法
   renderMath(element) {
+    // return;
     if (!element) return;
     renderMathInElement(element, {
       delimiters: [
@@ -175,15 +189,15 @@ class ContentProcessor {
 
   // 初始化KaTeX
   initKaTeX() {
-    renderMathInElement(document.body, {
-      delimiters: [
-        { left: "$$", right: "$$", display: true },
-        // {left: '[', right: ']', display: true},
-        // {left: '( ', right: ' )', display: false},
-        { left: "$", right: "$", display: false },
-      ],
-      throwOnError: false,
-    });
+    // renderMathInElement(document.body, {
+    //   delimiters: [
+    //     { left: "$$", right: "$$", display: true },
+    //     // {left: '[', right: ']', display: true},
+    //     // {left: '( ', right: ' )', display: false},
+    //     { left: "$", right: "$", display: false },
+    //   ],
+    //   throwOnError: false,
+    // });
   }
 
   bindCodeEvents($message) {

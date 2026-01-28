@@ -1,39 +1,138 @@
 <!DOCTYPE html>
 <html>
-
+<!-- - 改用 CEF 嵌套，统一 UI。
+- 新增使用指南、疑难与功能文档。
+- 键盘快捷键。
+- 优化流式回答，优化 katex 渲染。
+- 分离工具提示词。
+- 细节优化、修复。 -->
 <head>
     <title>Caph</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <link rel="stylesheet" href="static/css/style.css">
     <link rel="stylesheet" href="static/css/settings.css">
     <link rel="stylesheet" href="static/css/message.css">
-    <link rel="stylesheet" href="static/css/areo.css">
+
     <script src="static/js/jq.min.js"></script>
     <script src="static/js/marked.min.js"></script>
-    <!-- 添加KaTeX支持 -->
+
+    <!-- KaTeX -->
     <link rel="stylesheet" href="static/lib/katex.min.css">
+    <!-- <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.css"> -->
     <script src="static/lib/katex.min.js"></script>
     <script src="static/lib/auto-render.min.js"></script>
-    <!-- 添加代码高亮支持 -->
+
+    <!-- 代码高亮 -->
     <link href="static/lib/prism.css" rel="stylesheet" />
     <script src="static/lib/prism.js"></script>
     <script src="static/lib/mermaid.min.js"></script>
-    <!-- 添加图标支持 -->
-    <!-- <link rel="stylesheet" href="static/lib/bootstrap-icons.css"> -->
 
-    <script src="static/config.js"></script>
     <script src="static/js/processor.js"></script>
     <script src="static/js/settings.js"></script>
     <script src="static/js/dom.js"></script>
     <script src="static/js/conversations.js"></script>
+
     <script src="static/tools.js"></script>
+    <script src="static/config.js"></script>
+
     <script src="static/js/app.js"></script>
     <base target="_blank">
 </head>
 
-<body>
-    <div id="header-cover"></div>
+<body onkeydown="
+console.log(event.key);
+if(event.key=='F12' || event.key=='f12' || (event.ctrlKey && event.shiftKey && (event.key=='I' || event.key=='i'))){
+    opendevtools();
+}else if(event.key=='F5' || event.key=='f5' || (event.ctrlKey && (event.key=='R' || event.key=='r'))){
+    location.reload(true);
+}else if(event.key=='F1' || event.key=='f1'){
+    event.preventDefault();
+    window.cefBridge.openGuide();
+}else if(event.ctrlKey && event.key.toLowerCase()=='arrowright'){
+    event.preventDefault();
+    window.cefBridge.hideWindow();
+}
+if($('#settings-modal').hasClass('show')){
+    if(event.ctrlKey && event.key==','){
+        event.preventDefault();
+        settingManager.closeSettings();
+    }else if(event.ctrlKey && event.key=='s'){
+        event.preventDefault();
+        settingManager.saveSettings();
+    }
+}else if($('#about-modal').is(':visible')){
+    if(event.key=='Escape' || event.key=='Esc'){
+        event.preventDefault();
+        $('#about-close').trigger('click');
+    }
+}else if($('#devtools-confirm').is(':visible')){
+    if(event.key=='Escape' || event.key=='Esc'){
+        event.preventDefault();
+        $('#devtools-confirm').fadeOut(100);
+        $('#app').addClass('show');
+    }else if(event.key=='Enter'){
+        event.preventDefault();
+        if(window.cefBridge) {
+            localStorage.setItem('opendevtools','true');
+            window.cefBridge.openDevTools();
+            $('#devtools-confirm').fadeOut(100);
+            $('#app').addClass('show');
+        }
+    }
+}else if($('#app').hasClass('show')){
+    if(event.ctrlKey && event.key=='n'){
+        event.preventDefault();
+        conversationManager.createConversation();
+    }else if(event.ctrlKey && (event.key=='s' || event.key=='S')){
+        const payload = convManager.exportActiveConversation();
+        if (!payload) {
+        this.showError('没有要导出的会话');
+        return;
+        }
+        const fname = (payload.name || 'conversation') + '.json';
+        convManager.downloadObjectAsJson(payload, fname);
+    }else if(event.ctrlKey && event.key=='o'){
+        event.preventDefault();
+        $('#import-file').trigger('click');
+    }else if(event.ctrlKey && event.key=='m'){
+        event.preventDefault();
+        $('#sidebar').toggleClass('open');
+    }else if(event.altKey && event.key=='m'){
+        event.preventDefault();
+        $('#current-model').trigger('click');
+    }else if(event.ctrlKey && event.key==','){
+        event.preventDefault();
+        settingManager.openSettings();
+    }else if(event.altKey && event.key=='t'){
+        event.preventDefault();
+        $('#toggle-tool').trigger('click');
+    }else if(event.key=='Escape' || event.key=='Esc'){
+        event.preventDefault();
+        if($('.model-dropdown').length>0){
+            $('.model-dropdown').remove();
+        }
+        if($('#sidebar').hasClass('open')){
+            $('#sidebar').removeClass('open');
+        }
+    }
+}
+    ">
+    <div id="header-cover">
+    </div>
+    <div id="title-bar">
+        <div style="height: 100%;"><span id="caph">Caph</span></div>
+        <div class="buttons">
+
+            <button id="open-about" class="toolbar-button" title="关于">
+                <span class="sfi">&#xE946;</span>
+            </button>
+            <button class="toolbar-button" title="隐藏 (Ctrl + 向右)" onclick="window.cefBridge.hideWindow();">
+                <span class="sfi">&#xE974;</span>
+            </button>
+        </div>
+    </div>
     <div class="app-container show" id="app">
         <div id="sidebar" class="sidebar">
             <!-- <div id="token-error" class="token-error" style="display: none;" onclick="settingManager.openSettings()">
@@ -47,12 +146,14 @@
                 </div>
             </div>
             <div class="hr"></div> -->
-            <div class="list" id="actions-list">
-                <div class="a" id="new-conversation" title="新建空对话" onclick="conversationManager.createConversation();">
+            <div class="list">
+                <div class="a" title="新建空对话" onclick="conversationManager.createConversation();">
                     <span class="sfi">&#xE710;</span> 新建对话
+                    <span class="detail">Ctrl + N</span>
                 </div>
-                <div class="a" id="import-conversation" title="从本地的文件导入" onclick="$('#import-file').trigger('click');">
+                <div class="a" title="从本地的文件导入" onclick="$('#import-file').trigger('click');">
                     <span class="sfi">&#xE838;</span> 从文件导入
+                    <span class="detail">Ctrl + O</span>
                 </div>
             </div>
             <div class="list" id="conversations-list">
@@ -65,9 +166,17 @@
                     <span class="sfi">&#xE713;</span>
                     设置
                 </div> -->
-                <div id="open-about" class="a" title="关于">
-                    <span class="sfi">&#xE946;</span>
-                    关于
+                <div class="a" title="使用指南" onclick="window.cefBridge.openGuide();">
+                    <span class="sfi">&#xE82F;</span>
+                    使用指南
+                    <span class="detail">F1</span>
+                </div>
+
+                <div id="open-devtools" class="a" title="打开 Devtools" onclick="opendevtools();">
+                    <!-- <span class="sfi">&#xE62A;</span> -->
+                    <span class="sfi">&#xE912;</span>
+                    打开 Devtools
+                    <span class="detail">F12</span>
                 </div>
             </div>
             <!-- <div style="margin-top: auto;padding: 5px 14px; opacity: 0.7; text-align: center;font-size: 0.9em;line-height: 1.3em;">
@@ -88,14 +197,14 @@
                         onclick="settingManager.openSettings()">
                         请先配置 Github Token
                     </div>
-                    <button id="export-conversation" class="toolbar-button" title="导出当前对话">
+                    <button id="export-conversation" class="toolbar-button" title="导出对话 (Ctrl + S)">
                         <span class="sfi">&#xE74E;</span>
                         导出
                     </button>
-                    <button id="open-settings" class="toolbar-button" title="设置">
+                    <button id="open-settings" class="toolbar-button" title="设置 (Ctrl + ,)">
                         <span class="sfi">&#xE713;</span>
                     </button>
-                    <button id="more-button" class="toolbar-button" title="更多">
+                    <button id="more-button" class="toolbar-button" title="更多 (Ctrl + M)">
                         <span class="sfi">&#xE712;</span>
                     </button>
                 </div>
@@ -105,16 +214,16 @@
 
             <div class="input-container textarea-like" id="input-container">
                 <textarea id="message-input" class="textarea" placeholder="Shift + Enter 换行，Enter 发送。
-发送  &quot;/help&quot; 查看可用命令。"></textarea>
+发送  &quot;/help&quot; 查看帮助。"></textarea>
                 <div class="input-buttons">
-                    <div style="margin-left: 3px;" left>
-                        <div id="current-model" class="a">
+                    <div style="margin-left: 3px;">
+                        <div id="current-model" class="a" title="切换模型 (Alt + M)">
                             <span>?</span>
                         </div>
-                        <button id="toggle-tool" class="button toolbar-button" title="使用工具">
+                        <button id="toggle-tool" class="button toolbar-button" title="使用工具 (Alt + T)">
                             <span class="sfi">&#xE90F;</span>
                         </button>
-                        
+
                     </div>
                     <div right>
                         <button id="send-button" class="a button primary">
@@ -165,9 +274,14 @@
                             <span style="font-size:14px;opacity: 0.7;">注意要选择 Github Models 的访问权限。</span>
                         </div>
                         <div class="form-field">
-                            <label>系统提示词</label>
-                            <textarea class="input-field textarea textarea-like" id="setting-system-prompt" rows="4"
-                                placeholder="设置与AI助手对话时的系统提示词"></textarea>
+                            <label>基础提示词</label>
+                            <textarea class="input-field textarea textarea-like" id="setting-simple-prompt" rows="4"
+                                placeholder="基础部分的系统提示词，用以告知AI一些基础信息。"></textarea>
+                        </div>
+                        <div class="form-field">
+                            <label>工具提示词</label>
+                            <textarea class="input-field textarea textarea-like" id="setting-toolcall-prompt" rows="4"
+                                placeholder="启用工具时，将此段追加到系统提示词之后。"></textarea>
                         </div>
                         <div class="form-field">
                             <label>温度 (Temperature)</label>
@@ -233,7 +347,9 @@
             </div>
         </div>
         <div class="settings-footer">
-            <button id="save-settings" class="button primary">保存</button>
+            <button id="save-settings" class="button primary">保存
+                <span class="detail">Ctrl + S</span>
+            </button>
             <button id="close-settings" class="button">取消</button>
         </div>
 
@@ -242,7 +358,7 @@
     <!-- 关于 -->
     <div id="about-modal" class="modal-overlay" style="display:none;">
         <div class="modal-box">
-            <button class="modal-close small-btn" id="about-close" title="关闭"><span class="sfi">&#xE711;</span></button>
+            <button class="modal-close small-btn" id="about-close" title="关闭 (Esc)"><span class="sfi">&#xE711;</span></button>
             <div class="modal-content">
                 <span style="font-size: 30px;">Caph</span>
                 <p style="color:var(--text-color); opacity:0.9;">由<a class="a textlike"
@@ -254,6 +370,25 @@
                 <p style="margin-top:12px; font-size:13px; opacity:0.8;">开源于 Github <a class="a textlike"
                         href="https://github.com/tjy-gitnub">tjy-gitnub</a> / <a class="a textlike"
                         href="https://github.com/tjy-gitnub/caph">caph</a></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="devtools-confirm" style="display: none;" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-content">
+                <h2>打开 Devtools？</h2>
+                <p>你确定要打开 Devtools 吗？这常用于开发和调试。</p>
+                <div style="margin-top: 20px; display: flex; gap: 10px;">
+                    <button style="min-width: 50%;" class="button primary" onclick="if(window.cefBridge) {
+                            localStorage.setItem('opendevtools','true');
+                            window.cefBridge.openDevTools();
+                            $('#devtools-confirm').fadeOut(100);
+                            $('#app').addClass('show');
+                        }">打开 Devtools</button>
+                    <button class="button" style="width: 50%;" onclick="$('#devtools-confirm').fadeOut(100);
+                        $('#app').addClass('show');">取消</button>
+                </div>
             </div>
         </div>
     </div>

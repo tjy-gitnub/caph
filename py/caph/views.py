@@ -6,7 +6,11 @@ from webbrowser import open as open_in_browser
 from django.views.decorators.csrf import csrf_exempt
 
 def chatpage(r):
+    # 0/0
     return render(r,'index.html')
+def guidepage(r):
+    # 0/0
+    return render(r,'guide.html')
 
 @csrf_exempt
 def run_cmd(r):

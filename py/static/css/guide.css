@@ -1,0 +1,348 @@
+:root {
+    --primary-color: #2983cc;
+    --primary-hover: #44a1e8;
+    --bg-color: #f8f8f8;
+    --card-bg: #ffffffc0;
+    --input: #ffffffa0;
+    --inp: #fff;
+    --text-color: #000000;
+    --border-color: #00000015;
+    --hover-color: #dddddd90;
+    --message-user-bg: #b7e4ffc0;
+    --message-bot-bg: #ffffffcf;
+    --shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+    --list: #5555551a;
+    --red: #df4739;
+    --bright-red: #ff6659;
+    --titlebar-height: 40px;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+
+        --primary-color: #61ccff;
+        --primary-hover: #7ed6ff;
+        --bg-color: #2b2b2b;
+        --card-bg: #1b1b1bc0;
+        --input: #202020c0;
+        --inp: #111;
+        --text-color: #f5f5f5;
+        --border-color: #cccccc42;
+        --hover-color: #cecece30;
+        --message-user-bg: #3989bab0;
+        --message-bot-bg: #202020b0;
+        --shadow: 0 4px 15px rgba(0, 0, 0, 0.7);
+        --list: #d0d0d020;
+    }
+}
+
+@font-face {
+    font-family: 'Segoe Fluent Icons';
+    src: url('../lib/fonts/Segoe\ Fluent\ Icons.ttf') format('truetype');
+}
+
+.sfi {
+    font-family: 'Segoe Fluent Icons', 'Segoe MDL2 Assets', Arial, sans-serif;
+    font-size: 1em;
+    display: inline-block;
+    vertical-align: middle;
+    transition: transform 200ms 150ms ease;
+
+    &&& {
+        user-select: none !important;
+    }
+}
+
+html {
+    margin: 0;
+    padding: 0;
+}
+
+/* 禁止主页面滚动 */
+html,
+body {
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* 基础样式 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+        'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: 0.2px;
+    line-height: 1.6;
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    scroll-behavior: smooth;
+}
+
+.list .a {
+    display: block;
+    padding: 4px 10px;
+    /* margin-bottom: 4px; */
+    /* border-radius: 6px; */
+    color: var(--text-color);
+    text-decoration: none;
+    transition: background-color 80ms;
+    /* border-top: 1px solid #aaaaaa70; */
+    font-size: 14px;
+    cursor: default;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    overflow: hidden;
+    user-select: none;
+}
+
+.list .a:hover {
+    background-color: var(--list);
+}
+
+.list .a:active {
+    opacity: 0.6;
+}
+
+.list .a.active {
+    background-color: var(--primary-color);
+    color: var(--inp);
+    opacity: 1;
+}
+
+.list .a>i {
+    font-size: 16px;
+    opacity: 0.8;
+}
+
+hr {
+    display: block;
+    height: 1px;
+    width: 100%;
+    background-color: var(--border-color);
+    margin: 6px 0;
+}
+
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+    display: block;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 5px;
+    border: 2.5px solid transparent;
+    background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    border-color: var(--border-color);
+}
+
+::-webkit-scrollbar-thumb:active {
+    background: var(--text-color);
+    border-color: var(--text-color);
+}
+
+
+.folder-list{
+    display: none;
+}
+
+.folder-header {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.folder-header .arrow {
+    width: 16px;
+    display: inline-block;
+    transition: transform 150ms ease;
+    margin-right: 6px;
+}
+
+.folder-header.expanded .arrow {
+    transform: rotate(90deg);
+}
+
+.folder-list {
+    padding-left: 8px;
+}
+
+main {
+    display: flex;
+    height: 100%;
+    width: 100%;
+}
+
+#sidebar {
+    width: 25%;
+    max-width: 250px;
+    min-width: 150px;
+    margin: 0 8px;
+    flex-shrink: 0;
+    overflow-y: auto;
+}
+
+#content {
+    flex-grow: 1;
+    padding: 5px 15px 30px 20px;
+    background-color: var(--message-bot-bg);
+    /* height: 100%; */
+    overflow-y: scroll;
+    border-radius: 10px;
+    margin: 0 10px 10px 0;
+    scroll-behavior: smooth;
+    /* border-top-left-radius: 10px; */
+}
+
+#content>.content{
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Markdown 样式 */
+
+#content::selection {
+    background: var(--primary-color);
+    color: var(--inp);
+}
+
+#content pre {
+    border-radius: 10px;
+    width: max-content;
+    padding: 20px;
+    max-width: 100%;
+    font-size: 14px;
+    border: 2px solid #a0a0a027;
+    font-family: 'Cascadia Code', 'Ubuntu Mono', 'Consolas', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI';
+}
+
+#content code {
+    background-color: #b0b0b043;
+    border-radius: 5px;
+    padding: 3px 5px;
+    font-size: 0.9em;
+    font-family: 'Cascadia Code', 'Ubuntu Mono', 'Consolas', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI';
+}
+
+#content a {
+    color: var(--primary-color);
+}
+
+#content a:hover {
+    text-decoration: underline;
+    filter: brightness(1.2);
+}
+
+#content a:active {
+    opacity: 0.7;
+}
+
+#content ul,
+#content ol {
+    padding-left: 21px;
+}
+
+#content h1,
+#content h2,
+#content h3,
+#content h4,
+#content h5,
+#content h6 {
+    font-weight: 400;
+    margin: 10px 0 8px 5px;
+}
+
+#content h1 {
+    font-size: 2.1em;
+}
+
+#content h2 {
+    font-size: 1.7em;
+}
+
+#content h3 {
+    font-size: 1.5em;
+}
+
+#content h4 {
+    font-size: 1.2em;
+}
+
+#content h5 {
+    font-size: 1.1em;
+}
+
+#content h6 {
+    font-size: 0.9em;
+}
+
+#content blockquote {
+    margin-block-start: 5px;
+    margin-block-end: 5px;
+    margin-inline-start: 10px;
+    margin-inline-end: 0;
+    padding: 5px 5px 5px 15px;
+    border-radius: 0 10px 10px 0;
+    background-color: #7f7f7f30;
+    border-left: 3px solid var(--primary-color);
+}
+
+#content blockquote p {
+    margin: 2px 0;
+}
+
+/* 通用表格样式 */
+#content table {
+    border-collapse: collapse;
+    margin: 5px 0;
+}
+
+/* 表头样式 */
+#content thead tr {
+    background-color: #dfeaf4;
+    font-weight: bold;
+}
+
+/* 表头单元格样式 */
+#content th,
+#content td {
+    padding: 10px 15px;
+    border: 1px solid #a0a0a070;
+}
+
+#content tbody tr:nth-of-type(even) {
+    background-color: #f1f1f1;
+}

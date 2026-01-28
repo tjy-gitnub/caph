@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="static/js/jq.min.js"></script>
+    <title>Document</title>
+    <link rel="stylesheet" href="/static/css/guide.css">
+</head>
+
+<body onkeydown="
+if(event.key=='F5' || event.key=='f5' || (event.ctrlKey && (event.key=='R' || event.key=='r'))){
+    location.reload(true);
+}">
+    <main class="main-content">
+        <div id="sidebar">
+            <div class="list">
+
+            </div>
+        </div>
+        <div id="content">
+            <div class="content"></div>
+        </div>
+    </main>
+
+    <!-- 加载生成的 guide.js 并运行渲染逻辑 -->
+    <script src="/static/guide.js"></script>
+    <script>
+        (function () {  // 直接 IIFE，脚本位于 body 底部，DOM 已就绪
+            if (!window.GUIDE_DATA) return;
+            const data = window.GUIDE_DATA;
+            const $sidebar = $('#sidebar>.list');
+            const $contentContainer = $('#content');
+
+            const index = {}; // path -> file obj
+
+            function indexTree(node) {
+                (node.files || []).forEach(f => index[f.path] = f);
+                (node.children || []).forEach(c => indexTree(c));
+            }
+            // index root files
+            indexTree(data);
+
+            function buildFolder(node, $container) {
+                const $header = $('<div class="a folder-header"></div>');
+                const $arrow = $('<span class="sfi arrow">&#xE76C;</span>');
+                const displayName = (node.info && node.info.name) ? node.info.name : 'folder';
+                const $title = $('<span class="folder-name"></span>').text(displayName);
+                $header.append($arrow).append($title);
+                $container.append($header);
+
+                const $list = $('<div class="folder-list"></div>');
+                $container.append($list);
+
+                // files of this folder
+                (node.files || []).forEach(f => {
+                    const text = f.title || f.name;
+                    const $a = $('<a class="a"></a>').attr('href', '#' + f.path).attr('data-path', f.path).text(text);
+                    $a.on('click', function (e) { e.preventDefault(); navigateTo(f.path); });
+                    $list.append($a);
+                });
+
+                // children folders
+                (node.children || []).forEach(c => {
+                    buildFolder(c, $list);
+                });
+
+                // toggle
+                $header.on('click', function () {
+                    $list.slideToggle(120);
+                    $header.toggleClass('expanded');
+                });
+
+                return $container;
+            }
+
+            // build top-level: first root files (if any), then children folders
+            // show top-level files as direct links first
+            (data.files || []).forEach(f => {
+                index[f.path] = f;
+                const $a = $('<a class="a"></a>').attr('href', '#' + f.path).attr('data-path', f.path).text(f.title || f.name);
+                $a.on('click', function (e) { e.preventDefault(); navigateTo(f.path); });
+                $sidebar.append($a);
+            });
+            (data.children || []).forEach(c => {
+                buildFolder(c, $sidebar);
+            });
+
+            function renderHtml(html) {
+                $contentContainer.html(`<div class="content">${html}</div>`);
+            }
+
+            function expandTo(path) {
+                const $a = $('#sidebar a[data-path="' + path + '"]');
+                if (!$a.length) return;
+                // 展开祖先 folder-list
+                $a.parents('.folder-list').each(function () {
+                    const $list = $(this);
+                    $list.show();
+                    const $hdr = $list.prev('.folder-header');
+                    $hdr.addClass('expanded');
+                });
+            }
+
+            function _handleExternalLink(e, url) {
+                e.preventDefault();
+                console.log('Opening external link:', url);
+                if (window.cefBridge) {
+                    window.cefBridge.openUrl(url);
+                } else {
+                    window.open(url, '_blank');
+                }
+            }
+
+            function navigateTo(path, push = true) {
+                const file = index[path];
+                if (!file) { $('#content>.content').html(`<div class="content"><p>未找到：${path}</p></div>`); return; }
+                renderHtml(file.html);
+                $('#sidebar .a').removeClass('active');
+                const $sel = $('#sidebar a[data-path="' + path + '"]');
+                $sel.addClass('active');
+                expandTo(path);
+                // 拦截内部 md 链接
+                $('#content>.content').find('a[data-mdpath]').off('click').on('click', function (e) {
+                    e.preventDefault();
+                    const p = $(this).attr('data-mdpath') || '';
+                    if (!p) return;
+                    navigateTo(p.replace(/^\.\//, ''), true);
+                });
+                // 拦截外部链接（http/https/mailto）
+                $('#content>.content').find('a[href]').off('click.external').on('click.external', function (e) {
+                    const href = $(this).attr('href') || '';
+                    // 已由 data-mdpath 处理过的不在此处，因为 data-mdpath 有该属性
+                    if ($(this).is('[data-mdpath]')) return;
+                    console.log('Link clicked:', href);
+                    const lower = href.toLowerCase();
+                    if (lower.startsWith('http://') || lower.startsWith('https://') || lower.startsWith('mailto:')) {
+                        _handleExternalLink(e, href);
+                    } else {
+                        // 内部锚点或相对链接：默认行为（若需要，可扩展到内部导航）
+                    }
+                });
+                if (push) history.pushState({ path: path }, '', '#' + path);
+                $contentContainer.scrollTop(0);
+            }
+
+            // 初始化：优先 hash
+            const initial = location.hash && location.hash.length > 1 ? location.hash.slice(1) : (Object.keys(index)[0] || '');
+            if (initial) navigateTo(initial, false);
+
+            window.addEventListener('popstate', function (e) {
+                const p = (e.state && e.state.path) || (location.hash && location.hash.slice(1));
+                if (p) navigateTo(p, false);
+            });
+
+        })();
+    </script>
+</body>
+
+</html>

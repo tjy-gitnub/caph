@@ -3,25 +3,19 @@ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 xmlns:local="clr-namespace:Webapp"
-xmlns:Wpf="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf" x:Class="Webapp.MainWindow"
+x:Class="Webapp.MainWindow"
 mc:Ignorable="d"
 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
 Width="400" Height="800"
+xmlns:cef="clr-namespace:CefSharp.Wpf;assembly=CefSharp.Wpf"
 Title="MainWindow" WindowBackdropType="Acrylic" ExtendsContentIntoTitleBar="True" WindowCornerPreference="Round" ResizeMode="CanResize"
 ShowInTaskbar="False">
-    <!-- Root grid that will be translated for smooth animation -->
     <Grid x:Name="RootGrid" RenderTransformOrigin="0,0">
         <Grid.RenderTransform>
             <TranslateTransform x:Name="RootTranslate" X="0" />
         </Grid.RenderTransform>
 
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-
-        <!-- Custom header: only title and a hide button. No drag behavior. -->
-        <Border x:Name="header" Padding="7" Grid.Row="0" Background="{ui:ThemeResource}">
+        <!--Border x:Name="header" Padding="7" Grid.Row="0" Background="{ui:ThemeResource}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition/>
@@ -32,9 +26,9 @@ ShowInTaskbar="False">
                     <TextBlock FontFamily="Segoe Fluent Icons" FontSize="15" Text="&#xE974;" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </ui:Button>
             </Grid>
-        </Border>
+        </Border-->
 
-        <Wpf:WebView2 x:Name="wv" Grid.Row="1" Source="http://localhost:777" DefaultBackgroundColor="Transparent" Grid.RowSpan="2"/>
+        <cef:ChromiumWebBrowser x:Name="cefb" Address="http://localhost:777"/>
     </Grid>
 
 </ui:FluentWindow>

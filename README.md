@@ -1,6 +1,6 @@
 
 <div align="center">
-    <img src="./ico.svg" alt="Caph Logo" height="80" align="center"/>
+    <img src="./caph.svg" alt="Caph Logo" height="80" align="center"/>
     <h1 style="margin: 10px;">Caph</h1>
     <p>由 星源 开发 | Developed by Starry Source</p>
 </div>
@@ -14,12 +14,12 @@
 （请以实际界面和功能为准）
 
 ![](./art/image.png)
-![](./art//setting.png)
+![](./art/guide.png)
 
 
 ## 普通使用
 
-在页面右侧 Release 中下载最新版，即可使用。
+在页面右侧 Release 中下载最新版压缩包，解压后即可使用。
 
 ## 功能
 
@@ -35,6 +35,8 @@
 - 多对话管理
     - 历史管理
     - 文件导入、导出
+- 使用指南
+    - 详细的使用指导、疑难解答
 - 工具调用
     - 工具管理
     - 自定义工具（要有环境以生成，见下）

@@ -1,5 +1,4 @@
-﻿using Microsoft.Web.WebView2.Wpf;
-using Microsoft.Win32;
+﻿using Microsoft.Win32;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -16,9 +15,11 @@ using Wpf.Ui.Controls;
 
 namespace Webapp
 {
-
+    using CefSharp;
+    using CefSharp.Wpf;
     using Microsoft.Win32;
     using System;
+    using System.Reflection;
     using System.Runtime.InteropServices;
     using System.Threading.Tasks;
 
@@ -88,7 +89,78 @@ namespace Webapp
             }
         }
     }
-    public partial class MainWindow : FluentWindow
+
+    public class JsInterop
+    {
+        public IWebBrowser browserControl { get; set; }
+        public Action animateHideWindow { get; set; }
+        public Action openGuideWindow { get; set; }
+
+        public void OpenDevTools()
+        {
+            browserControl.ShowDevTools();
+        }
+
+        public void HideWindow()
+        {
+            animateHideWindow?.Invoke();
+        }
+
+        public void OpenGuide()
+        {
+            openGuideWindow?.Invoke();
+        }
+
+        public void openUrl(string url)
+        {
+            // 在默认浏览器中打开链接
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "\"" + url + "\"",
+                UseShellExecute = true
+            });
+        }
+    }
+
+    public class DownloadHandler : IDownloadHandler
+    {
+
+        public bool CanDownload(IWebBrowser browserControl, IBrowser browser, string url, string suggestedFileName)
+        {
+            return true;
+        }
+
+        public bool OnBeforeDownload(
+            IWebBrowser browserControl,
+            IBrowser browser,
+            DownloadItem downloadItem,
+            IBeforeDownloadCallback callback)
+        {
+            if (callback.IsDisposed) return false;
+
+            // 这里指定下载的文件保存路径
+            string downloadPath = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                downloadItem.SuggestedFileName);
+
+            // 第二个参数 showDialog=false 表示不弹窗，自动下载
+            callback.Continue(downloadPath, showDialog: true);
+            return true;
+        }
+
+        public void OnDownloadUpdated(
+            IWebBrowser browserControl,
+            IBrowser browser,
+            DownloadItem downloadItem,
+            IDownloadItemCallback callback)
+        {
+            if (downloadItem.IsComplete)
+            {
+                Process.Start("explorer.exe", $"/select,\"{downloadItem.FullPath}\"");
+            }
+        }
+    }
+    public partial class MainWindow
     {
         private NotifyIcon _trayIcon;
         private const double RightMargin = 20; // gap from right edge
@@ -116,7 +188,7 @@ namespace Webapp
             Loaded += MainWindow_Loaded;
             SourceInitialized += MainWindow_SourceInitialized;
 
-            HideButton.Click += HideButton_Click;
+            //HideButton.Click += HideButton_Click;
             Loaded += (sender, args) =>
             {
                 Wpf.Ui.Appearance.SystemThemeWatcher.Watch(
@@ -132,6 +204,136 @@ namespace Webapp
             handle_ThemeChanged(this, EventArgs.Empty);
             // Initialize tray
             InitTray();
+
+            cefb.JavascriptObjectRepository.Settings.LegacyBindingEnabled = true;
+            JsInterop jsInterop = new JsInterop();
+            jsInterop.browserControl = cefb;
+            jsInterop.animateHideWindow = () =>
+            {
+                if (_isHidden) return;
+                this.Dispatcher.Invoke(() =>
+                {
+                    AnimateHide(true);
+                });
+            };
+            jsInterop.openGuideWindow = () =>
+            {
+                this.Dispatcher.Invoke(() =>
+                {
+                    var guideWindow = new Guide();
+                    guideWindow.Show();
+                });
+            };
+
+            cefb.JavascriptObjectRepository.Register("cefBridge", jsInterop, isAsync: false, options: BindingOptions.DefaultBinder);
+            cefb.DownloadHandler = new DownloadHandler();
+
+            cefb.LoadError += Browser_LoadError;
+
+        }
+
+        // 事件处理方法
+        private void Browser_LoadError(object sender, CefSharp.LoadErrorEventArgs e)
+        {
+            // 排除中断导航的特殊情况（比如用户取消）
+            if (e.ErrorCode == CefErrorCode.Aborted)
+                return;
+            string errorHtml = $@"
+            <html>
+            <head>
+                <meta charset='UTF-8'>
+                <!--meta http-equiv='refresh' content='3;url={e.FailedUrl}'-->
+            </head>
+            <body style='font-family:sans-serif;padding-top:50px;display:flex;flex-direction:column;align-items:center;user-select: none;transition:100ms;'>
+                <style>.btn{{
+                    padding: 7px 18px;
+                    font-size: 15px;
+                    border-radius: 8px;
+                    color: #000;
+                    cursor: default;
+                    user-select: none;
+                    width: max-content;
+                    transition: 100ms;
+                }}
+                .btn.p{{
+                    background-color: #61ccff;
+                }}
+                .btn:hover{{
+                    background-color: #ffffff30;
+                }}
+                .btn.p:hover{{
+                    background-color: #7ed6ff;
+                }}
+                .btn:active{{
+                    opacity: 0.6;
+                }}
+                @media (prefers-color-scheme: dark){{
+                    body{{
+                        color:#fff;
+                    }}
+                }}
+                </style>
+                <h1>错误</h1>
+                <p>请检查控制台输出。</p>
+                <p style='user-select: text;'>{e.ErrorCode}: {e.ErrorText}</p>
+                <div style='display:flex;gap:10px;'>
+                    <div class=btn onclick='document.body.style.opacity=0;window.location.href=""{e.FailedUrl}"";'>刷新</div>
+                    <div class=btn onclick='window.cefBridge.openDevTools();'>打开 Devtools</div>
+                </div>
+            </body>
+            </html>";
+            if (e.ErrorCode == CefErrorCode.ConnectionRefused)
+                errorHtml = $@"
+                <html>
+                <head>
+                    <meta charset='UTF-8'>
+                    <!--meta http-equiv='refresh' content='3;url={e.FailedUrl}'-->
+                </head>
+                <body style='font-family:sans-serif;padding-top:50px;display:flex;flex-direction:column;align-items:center;user-select: none;transition:100ms;'>
+                    <style>.btn{{
+                        padding: 7px 18px;
+                        font-size: 15px;
+                        border-radius: 8px;
+                        cursor: default;
+                        user-select: none;
+                        width: max-content;
+                        transition: 100ms;
+                    }}
+                    .btn.p{{
+                        background-color: #61ccff;
+                        color: #000;
+                    }}
+                    .btn:hover{{
+                        background-color: #ffffff20;
+                    }}
+                    .btn.p:hover{{
+                        background-color: #7ed6ff;
+                    }}
+                    .btn:active{{
+                        opacity: 0.6;
+                    }}
+                    @media (prefers-color-scheme: dark){{
+                        body{{
+                            color:#fff;
+                        }}
+                        .detail{{
+                            color:#999 !important;
+                        }}
+                    }}
+                    </style>
+                    <h1>稍等...</h1>
+                    <span>服务端尚未完成初始化。</span>
+                    <p>{e.ErrorText}</p>
+                    <div style='display:flex;gap:10px;'>
+                        <div class='btn p' onclick='document.body.style.opacity=0;window.location.href=""{e.FailedUrl}"";'>刷新</div>
+                        <div class=btn onclick='window.cefBridge.openDevTools();'>打开 Devtools</div>
+                    </div>
+                    <p class=detail style='margin:10px 20px;color:#555;'>若持续遇到此问题，请检查服务端是否启动，或是否被误关闭。</p>
+                </body>
+                </html>";
+            //cefb.ShowDevTools();
+            // 加载自定义错误页面
+            e.Frame.LoadHtml(errorHtml);
         }
 
         private void handle_ThemeChanged(object sender, EventArgs e)
@@ -140,12 +342,12 @@ namespace Webapp
             if (isLight)
             {
                 // #ffffff
-                header.Background = new SolidColorBrush(Colors.White);
+                //header.Background = new SolidColorBrush(Colors.White);
             }
             else
             {
                 // #222222
-                header.Background = new SolidColorBrush(Color.FromRgb(34, 34, 34));
+                //header.Background = new SolidColorBrush(Color.FromRgb(34, 34, 34));
             }
         }
 
@@ -171,12 +373,7 @@ namespace Webapp
         }
         private void MainWindow_SourceInitialized(object sender, EventArgs e)
         {
-            var icoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ico.ico");
-            if (File.Exists(icoPath))
-            {
-                try { _trayIcon.Icon = new System.Drawing.Icon(icoPath); } catch { }
-                try { this.Icon = BitmapFrame.Create(new Uri(icoPath, UriKind.Absolute)); } catch { }
-            }
+            _trayIcon.Icon = new System.Drawing.Icon(Assembly.GetExecutingAssembly().GetManifestResourceStream(IsLightTheme()? "Webapp.icolight.ico":"Webapp.ico.ico"));
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -235,7 +432,7 @@ namespace Webapp
         }
 
         // Use per-frame updates to move actual window position for smooth animation including HWND children (WebView2)
-        private void AnimateHide(bool hide)
+        public void AnimateHide(bool hide)
         {
             if (_isAnimating) return;
 
@@ -292,7 +489,7 @@ namespace Webapp
         private void InitTray()
         {
             _trayIcon = new NotifyIcon();
-            _trayIcon.Icon = System.Drawing.SystemIcons.Application; // default, replaced in SourceInitialized if ico present
+            _trayIcon.Icon = System.Drawing.SystemIcons.Application;
             _trayIcon.Visible = true;
             _trayIcon.Text = "Caph";
 

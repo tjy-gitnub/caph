@@ -10,11 +10,6 @@ html {
     padding: 0;
 }
 
-/* body>div:not(#app):not(#settings-modal) {
-    z-index: -100;
-    opacity: 0;
-} */
-
 /* 禁止主页面滚动 */
 html,
 body {
@@ -31,7 +26,6 @@ body {
     user-select: none;
 }
 
-/* 字体优化 */
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
         'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -40,6 +34,8 @@ body {
     letter-spacing: 0.2px;
     line-height: 1.6;
     color: var(--text-color);
+    display: flex;
+    flex-direction: column;
 }
 
 .a.textlike {
@@ -59,11 +55,44 @@ body {
     }
 }
 
+#header-cover {
+    background-color: var(--input);
+    position: fixed;
+    z-index: -1;
+    width: 100%;
+    top: 0;
+    left: 0;
+    height: 75px;
+}
+
+#title-bar{
+    height: var(--titlebar-height);
+    width: 100%;
+    display: flex;
+    align-items:flex-start;
+    justify-content: space-between;
+    padding: 5px;
+    flex-shrink: 0;
+}
+
+#title-bar>div{
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+#caph{
+    line-height: 1;
+    height: max-content;
+    margin-left: 7px;
+    font-size: 18px;
+}
+
 .app-container {
     display: flex;
     width: 100vw;
-    height: 100vh;
     overflow: hidden;
+    flex-grow: 1;
 }
 
 #conversations-list {
@@ -104,7 +133,6 @@ body {
 .list {
     display: flex;
     flex-direction: column;
-    margin: 0 5px 0 3px;
     gap: 2px;
     scroll-behavior: smooth;
 }
@@ -138,13 +166,19 @@ body {
 /* 模型选中状态 */
 .list .a.active {
     background-color: var(--primary-color);
-    color: var(--input);
+    color: var(--inp);
     opacity: 1;
 }
 
 .list .a>i {
     font-size: 16px;
     opacity: 0.8;
+}
+
+.list .a>.detail{
+    font-size: 12px;
+    opacity: 0.7;
+    margin-left: auto;
 }
 
 .hr {
@@ -158,9 +192,6 @@ body {
 
 /* 主内容区 */
 #chat-header {
-    /* margin: 0 10px 0 10px;
-    margin: 0; */
-    /* background: var(--input); */
     height: 35px;
     /* border: 1px solid var(--border-color); */
     display: flex;
@@ -169,6 +200,7 @@ body {
     align-items: center;
     /* border-radius: 8px; */
     padding: 0 5px 5px 5px;
+    /* flex-shrink: 0; */
     /* transition: 100ms; */
 
     >div {
@@ -178,33 +210,6 @@ body {
     }
 }
 
-#header-cover {
-    background-color: var(--input);
-    position: fixed;
-    z-index: -1;
-    width: 100%;
-    top: 0;
-    left: 0;
-    height: 35px;
-}
-
-#chat-header.greeting {
-    background: none;
-    border-color: transparent;
-
-    >.model-selector {
-        display: none;
-    }
-
-    >.buttons {
-        margin-left: auto;
-    }
-
-}
-
-/* #chat-header.empty{
-    visibility:hidden;
-} */
 
 #current-model {
     color: var(--text-color);
@@ -368,13 +373,6 @@ body {
 
     .fold-content {
         margin: 0;
-        border: none;
-        padding: 4px 10px;
-
-        &.collapsed {
-            height: 36px;
-            width: 110px;
-        }
     }
 
     >.message-header {
@@ -564,7 +562,6 @@ main.main-content>.model-dropdown {
     /* max-height: unset; */
 }
 
-#input-container>.input-buttons #send-btn {}
 
 .form-field input[type="text"],
 .form-field input[type="number"],
@@ -595,7 +592,7 @@ main.main-content>.model-dropdown {
 }
 
 .form-field select option {
-    background: var(--input);
+    background: var(--inp);
     color: var(--text-color);
     font-size: 14px;
     padding: 5px 10px;
@@ -640,7 +637,7 @@ main.main-content>.model-dropdown {
 .form-field input[type="number"]:focus,
 .form-field select:focus,
 .textarea:focus {
-    background-color: var(--input);
+    background-color: var(--inp);
     border-color: var(--primary-color);
 }
 
@@ -661,14 +658,21 @@ main.main-content>.model-dropdown {
     gap: 5px;
 }
 
+.button>.detail {
+    font-size: 12px;
+    opacity: 0.7;
+    margin-left: 2px;
+    margin-bottom: -2px;
+}
+
 .button.primary {
     background: var(--primary-color);
-    color: var(--input);
+    color: var(--inp);
     border: none;
 }
 
 
-.button[disabled] {
+.button[disabled],.toolbar-button[disabled] {
     pointer-events: none;
     opacity: 0.6;
 }
@@ -924,6 +928,10 @@ loading>svg {
     transform: none;
 }
 
+.message.streaming>.message-toolbar {
+    display: none;
+}
+
 .toolbar-button {
     padding: 6px;
     border: none;
@@ -936,6 +944,10 @@ loading>svg {
     gap: 4px;
     font-size: 14px;
     transition: 50ms;
+    >.sfi{
+        width: 15px;
+        height: 15px;
+    }
 }
 
 .toolbar-button:hover {
@@ -986,7 +998,7 @@ loading>svg {
         align-items: center;
 
         >.small-btn {
-            color: var(--input);
+            color: var(--inp);
             border: none;
             cursor: pointer;
 
@@ -1003,7 +1015,7 @@ loading>svg {
 
     &.renaming {
         border: var(--primary-color) solid 2px;
-        background-color: var(--input);
+        background-color: var(--inp);
     }
 
     &.error {
@@ -1030,10 +1042,6 @@ loading>svg {
     }
 }
 
-/* header 按钮小间距 */
-#chat-header .buttons .button {
-    margin-left: 6px;
-}
 
 /* current-model 下拉样式 */
 .model-dropdown {
@@ -1091,10 +1099,10 @@ loading>svg {
     display: none;
     position: fixed;
     right: 5px;
-    top: 40px;
+    top: 80px;
     width: 250px;
     z-index: 61;
-    padding: 5px;
+    padding: 8px;
     box-sizing: content-box;
     background: var(--bg-color);
     border: 1px solid var(--border-color);
@@ -1109,33 +1117,10 @@ loading>svg {
     display: block;
 }
 
-/* #sidebar{
-    display: none;
-    position: fixed;
-
-    
-    box-sizing: border-box;
-    flex-shrink: 0;
-    flex-direction: column;
-    overflow: hidden;
-
-    left: 20px;
-    top: 80px;
-    width: 320px;
-    z-index: 61;
-    padding: 12px;
-    background: var(--bg-color);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    box-shadow: var(--shadow);
-
-    transform-origin: right top;
-    animation: fadeDown 200ms cubic-bezier(0, 0.3, 0.2, 1) forwards;
-
-    &.open{
-        display: block;
-    }
-} */
+#open-settings:active>.sfi{
+    transform: rotate(-120deg);
+    transition: transform 200ms cubic-bezier(0.5, 0.83, 0.83, 1);
+}
 
 /* 关于 */
 .modal-overlay {

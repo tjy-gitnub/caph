@@ -77,3 +77,12 @@ const tool_handlers = {
     //     return '[用户已拒绝]';
     // },
 };
+
+const tool_describers = {
+    run_cmd: (args) => {
+        return `运行 cmd 命令<br><code> ${args.command} </code>`;
+    },
+    open_url: (args) => {
+        return `打开链接 <code>${args.url}</code>`;
+    },
+};

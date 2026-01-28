@@ -2,6 +2,7 @@ const dom = new Dom();
 
 chatHistory = []; // 当前对话消息历史
 isProcessing = false; // 消息处理状态标志
+pausingForToolCall = false; // 是否在等待工具调用用户确认
 editingMessageId = null; // 正在编辑的消息ID
 abortController = null; // 用于取消请求的 AbortController
 
@@ -109,6 +110,7 @@ async function handleSendMessage() {
     abortController = null;
     return;
   }
+  if (pausingForToolCall) return;
   const input = $("#message-input");
   const content = input.val().trim();
   if (!content) return;
@@ -162,11 +164,15 @@ function handleCommand(commandText) {
   switch (command) {
     case "help":
       showCommandResponse(`可用命令:
+/guide - 使用指南
 /clear - 清除对话历史
-/help - 显示此帮助信息
-/temp [0-1] - 设置 Temperature`);
+/temp [0-1] - 设置 Temperature
+/help - 显示此帮助信息`);
       break;
 
+    case "guide":
+      window.cefBridge.openGuide();
+      break;
     case "clear":
       chatHistory = [];
       $("#chat-messages").empty();
@@ -333,11 +339,17 @@ function saveHistory() {
  * @param {string} id 消息ID
  */
 function deleteMessage(id) {
-  const index = chatHistory.findIndex((msg) => msg.id === id);
+  let index = chatHistory.findIndex((msg) => msg.id === id);
   if (index !== -1) {
     chatHistory.splice(index, 1);
-    $(`[data-id="${id}"]`).remove();
+    // $(`[data-id="${id}"]`).remove();
+    index--;
+    while (index > 0 && (chatHistory[index].role === 'tool' || chatHistory[index].role === 'assistant')) {
+      chatHistory.splice(index, 1);
+      index--;
+    }
     saveHistory();
+    dom.renderChatHistory();
   }
 }
 
@@ -381,7 +393,8 @@ async function sendToServer() {
   try {
     // 构建消息历史（包含system prompt）
     const active = convManager.getActive();
-    const systemPrompt = settings_data.systemPrompt;
+    const enableTool = localStorage.getItem("enableTool") === "true";
+    const systemPrompt = settings_data.simplePrompt + (enableTool ? '\n\n' + settings_data.toolCallPrompt : '');
     const temperature = settings_data.temperature ?? 0.7;
     const modelToUse = active?.model || currentModel;
 
@@ -409,7 +422,6 @@ async function sendToServer() {
     const enabledTools = av_tools.filter(t => {
       return !settings_data.tools_disabled[t.function.name];
     });
-    const enableTool = localStorage.getItem("enableTool") === "true";
     let req_body = {
       messages,
       model: modelToUse,
@@ -583,11 +595,8 @@ async function sendToServer() {
               onApprove: async ($card) => {
                 dom.updateToolCardState($card, "loading");
                 let parsedArgs;
-                try {
-                  parsedArgs = JSON.parse(toolCallBuffer[toolIndex].arguments);
-                } catch {
-                  parsedArgs = toolCallBuffer[toolIndex].arguments;
-                }
+
+                parsedArgs = JSON.parse(toolCallBuffer[toolIndex].arguments);
                 const handler = tool_handlers[toolCallBuffer[toolIndex].name];
                 try {
                   if (handler) result = await handler(parsedArgs);
@@ -595,8 +604,8 @@ async function sendToServer() {
                   if (typeof result !== "string") {
                     result = JSON.stringify(result, null, 2);
                   }
-                  if (result.length > 1000) {
-                    result = result.substring(0, 1000) + "......[结果过长，已截断]";
+                  if (result.length > 2000) {
+                    result = result.substring(0, 2000) + "......[结果过长，已截断]";
                   }
                   console.log("Tool name:", toolCallBuffer[toolIndex].name, "Args:", parsedArgs, "Result:", result);
 
@@ -612,6 +621,7 @@ async function sendToServer() {
                   tool: toolCallBuffer[toolIndex].name,
                   tool_call_id: assistantToolMessage.tool_calls[toolIndex].id,
                   timestamp: new Date().toISOString(),
+                  description: toolCallBuffer[toolIndex].description
                 };
                 chatHistory.push(toolMessage);
                 saveHistory();
@@ -639,6 +649,7 @@ async function sendToServer() {
                   tool: toolCallBuffer[toolIndex].name,
                   tool_call_id: assistantToolMessage.tool_calls[toolIndex].id,
                   timestamp: new Date().toISOString(),
+                  description: toolCallBuffer[toolIndex].description
                 };
                 chatHistory.push(toolMessage);
                 saveHistory();
@@ -677,19 +688,26 @@ async function sendToServer() {
           }
         }
 
-        if (data.choices?.[0]?.finish_reason === "tool_calls") {
+      }
+
+      if (done) {
+        console.log("Stream ended");
+        if (toolCallBuffer.length > 0) {
           console.log("Pausing for", toolCallBuffer.length, "tool calls");
-          dom.enableToolCardActions(toolCardEl);
+          dom.pauseForToolCall(toolCardEl);
+          // 生成描述
+          for (let i = 0; i < toolCallBuffer.length; i++) {
+            const describer = tool_describers[toolCallBuffer[i].name];
+            toolCallBuffer[i].description = describer ?
+              describer(JSON.parse(toolCallBuffer[i].arguments)) :
+              `<p>${toolCallBuffer[i].name}：${toolCallBuffer[i].arguments}</p>`;
+            toolCardEl[i].find(".message-content").html(toolCallBuffer[i].description);
+          }
           if (toolCallBuffer.length > 1) {
             // 整理多个工具卡片
             dom.arrangeMultipleToolCards(toolCallBuffer.length);
           }
         }
-
-      }
-
-      if (done) {
-        console.log("Stream ended");
         break;
       }
     }
@@ -734,4 +752,16 @@ async function sendToServer() {
     fullResponse = '';
     sendToServer();
   }
+}
+
+function opendevtools() {
+  if (localStorage.getItem('opendevtools') == 'true') {
+    if (window.cefBridge) {
+      window.cefBridge.openDevTools();
+    }
+    return;
+  }
+  $('#devtools-confirm').fadeIn(100);
+  $('#app,#settings-modal').removeClass('show');
+  $('#about-modal').hide();
 }
