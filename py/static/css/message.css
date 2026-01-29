@@ -8,20 +8,39 @@
     color: var(--inp);
 }
 
-.message-content .stopped-label {
-    border: 2px solid var(--bright-red);
+.message-content .label{
+    border: 2px solid var(--primary-color);
     /* background-color: ; */
-    background: #ff6d6d30;
-    opacity: 0.9;
+    /* background: ; */
+    /* opacity: 0.9; */
     /* color: var(--red); */
     user-select: none;
-    margin-top: 3px;
+    margin: 3px 0;
     font-size: 0.9em;
     padding: 3px 10px;
     display: flex;
     width: max-content;
     align-items: center;
+    text-wrap: nowrap;
+    gap: 8px;
     border-radius: 100px;
+    
+    >* {
+        user-select: none;
+    }
+}
+
+.message-content .label.lb-stopped {
+    border-color:var(--bright-red);
+    /* background-color: ; */
+    background: #ff6d6d30;
+}
+
+.message.assistant .label.lb-toolcall {
+    padding: 5px 15px;
+    >.name {
+        font-weight: bold;
+    }
 }
 
 /* Markdown 内容样式 */

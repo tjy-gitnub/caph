@@ -101,7 +101,6 @@
 
 .settings-title {
     font-size: 25px;
-    font-weight: 500;
     color: var(--text-color);
 }
 
@@ -186,7 +185,6 @@
     text-align: center;
     font-size: 14px;
     color: var(--text-color);
-    font-weight: 500;
 }
 
 
@@ -434,7 +432,6 @@ textarea.input-field {
                 background: none;
                 color: var(--text-color);
                 font-size: 16px;
-                font-weight: 500;
                 padding: 0;
                 margin: 0;
             }

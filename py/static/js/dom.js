@@ -206,25 +206,26 @@ class Dom {
     if (message.isUser) {
       $content.text(processedContent);
     } else if (message.role === 'tool') {
-      processedContent = `<div class="fold-content collapsed" onclick="if($(this).hasClass('collapsed')) $(this).find('.fold-toggle').click();">
-                    <div class="fold-header">
-                        <span class="fold-title">调用详细</span>
-                        <button class="fold-toggle" onclick="$(this.parentElement.parentElement).toggleClass('collapsed');$(this).find('.sfi').toggleClass('down');event.stopPropagation();">
-                            <span class="sfi chevron-down">&#xE70D;</span>
-                        </button>
-                    </div>
-                    <div class="fold-body">
-                      <div class="tool-description">
-                          ${message.description}
-                      </div>
-                      <pre class="tool-result">${processedContent}</pre>
-                    </div>
-                </div>`
+      processedContent = `
+        <div class="tool-description">
+            ${message.description}
+        </div>
+        <div class="fold-content collapsed" onclick="if($(this).hasClass('collapsed')) $(this).find('.fold-toggle').click();">
+          <div class="fold-header">
+              <span class="fold-title">返回结果</span>
+              <button class="fold-toggle" onclick="$(this.parentElement.parentElement).toggleClass('collapsed');$(this).find('.sfi').toggleClass('down');event.stopPropagation();">
+                  <span class="sfi chevron-down">&#xE70D;</span>
+              </button>
+          </div>
+          <div class="fold-body">
+            <pre class="tool-result">${processedContent}</pre>
+          </div>
+        </div>`;
       $content.html(processedContent);
     } else {
       if (Array.isArray(message.tool_calls) && message.tool_calls.length) {
         const name = message.tool_calls.length > 1 ? message.tool_calls.length + '个' : message.tool_calls[0].function.name;
-        processedContent += `<div class="inline-tool"><span class=sfi>&#xE90F;</span><span>使用工具</span><span class=name>${name}</span></div>`;
+        processedContent += `<div class="label lb-toolcall"><span class=sfi>&#xE90F;</span><span>使用工具</span><span class=name>${name}</span></div>`;
         // 不渲染数学公式或代码高亮（工具调用的内容由卡片展示）
         // this.bindMessageToolbarEvents($message, message);
         // return $message;
@@ -495,17 +496,6 @@ class Dom {
       e.stopPropagation();
     });
 
-    // 关于
-    $("#open-about").click((e) => {
-      e.stopPropagation();
-      $("#about-modal").fadeIn(100);
-      $("#app").removeClass("show");
-    });
-
-    $(document).on("click", "#about-close", () => {
-      $("#about-modal").fadeOut(100);
-      $("#app").addClass("show");
-    });
   }
 
   // 设置输入框自动调整高度
@@ -534,64 +524,43 @@ class Dom {
   }
 
   // 新增：创建工具调用确认卡片（支持传入对象或旧签名）
-  createToolCard(arg1, arg2) {
-    // 支持两种调用方式： createToolCard({name, argsText, onApprove, onDeny, beforeEl})
-    // 或 createToolCard(name, argsText)
-    let name, argsText, onApprove, onDeny, beforeEl;
-    if (typeof arg1 === "object" && arg1 !== null) {
-      name = arg1.name || "";
-      argsText = arg1.argsText || arg1.argsPreview || "";
-      onApprove = arg1.onApprove;
-      onDeny = arg1.onDeny;
-      beforeEl = arg1.beforeEl; // 可选，jQuery 元素或选择器
-    } else {
-      name = arg1 || "";
-      argsText = arg2 || "";
-    }
-
+  createToolCard(buffer) {
     const $card = $(`
       <div class="message tool waiting-confirmation">
         <div class="message-header">
-        <span class="sfi">&#xE90F;</span><span style="font-weight:600;">${name}</span>
+        <span class="sfi">&#xE90F;</span><span style="font-weight:600;" class="tool-name">${buffer.name}</span>
           <div class="tool-state" style="opacity:0.8;font-size:13px;text-align: end;flex:1;">等待确认</div>
         </div>
-        <div class="message-content" style="white-space:pre-wrap;">${argsText}</div>
+        <div class="message-content" style="white-space:pre-wrap;">${buffer.arguments}</div>
         <div class="actions">
-          <button class="button primary tool-approve" title="同意" disabled>同意</button>
+          <button class="button primary tool-approve" title="同意并运行" disabled>同意</button>
           <button class="button tool-cancel" title="拒绝" disabled>拒绝</button>
         </div>
       </div>
     `);
 
     // 绑定按钮事件，使用传入回调（若存在）
-    $card.find(".tool-approve").click((e) => {
+    $card.find(".tool-approve").click(async (e) => {
       e.stopPropagation();
-      $card.find(".tool-approve,.tool-cancel").prop("disabled", true);
-      onApprove($card);
+      $(".tool-approve,.tool-cancel,.tool-approve-all,.tool-cancel-all").prop("disabled", true);
+      await buffer.onApprove($card);
+      $(".tool-approve,.tool-cancel,.tool-approve-all,.tool-cancel-all").prop("disabled", false);
     });
     $card.find(".tool-cancel").click((e) => {
       e.stopPropagation();
-      $card.find(".tool-approve,.tool-cancel").prop("disabled", true);
-      onDeny($card);
+      $(".tool-approve,.tool-cancel,.tool-approve-all,.tool-cancel-all").prop("disabled", true);
+      buffer.onDeny($card);
+      $(".tool-approve,.tool-cancel,.tool-approve-all,.tool-cancel-all").prop("disabled", false);
     });
 
-    // 插入位置：优先 beforeEl（若指定），否则如果有正在流式的 AI 消息则放在其后，否则追加到消息列表末尾
-    if (beforeEl && beforeEl.length) {
-      $(beforeEl).before($card);
-    } else {
-      const $streaming = $(".message.assistant.streaming");
-      if ($streaming.length) {
-        $streaming.after($card);
-      } else {
-        $("#chat-messages").append($card);
-      }
-    }
+    $("#chat-messages").append($card);
     this.scrollToBottom();
     return $card;
   }
 
-  updateToolCardPreview($card, argsText) {
-    $card.find(".message-content").text(argsText);
+  updateToolCardPreview($card, buffer) {
+    $card.find(".tool-name").text(buffer.name);
+    $card.find(".message-content").text(buffer.arguments);
   }
 
   updateToolCardState($card, state) {
@@ -622,17 +591,15 @@ class Dom {
   }
 
   pauseForToolCall(cardlist) {
-    cardlist.forEach(($card) => {
-      $card.find(".tool-approve,.tool-cancel").prop("disabled", false);
-    });
+    $(".tool-approve,.tool-cancel").prop("disabled", false);
     pausingForToolCall = true;
     $('#send-button,#toggle-tool').prop('disabled', true);
   }
 
-  arrangeMultipleToolCards(num) {
+  arrangeMultipleToolCards(tools, toolCardEl, finishedToolCalls) {
     const $total = $(`
       <div class="multiple-tool-calls">
-        <div class="text"><span class="tool-count">${num}</span> 个工具调用</div>
+        <div class="text"><span class="tool-count">${tools.length}</span> 个调用待确认</div>
         <div class="actions">
           <button class="button primary tool-approve-all" title="同意全部">同意全部</button>
           <button class="button tool-cancel-all" title="拒绝全部">拒绝全部</button>
@@ -640,14 +607,29 @@ class Dom {
       </div>
     `);
 
-    $total.find(".tool-approve-all").click((e) => {
+    $total.find(".tool-approve-all").click(async (e) => {
       e.stopPropagation();
-      $(".tool-approve").click();
+      $(".tool-approve,.tool-cancel,.tool-approve-all,.tool-cancel-all").prop("disabled", true);
+      for (let i = 0; i < tools.length; i++) {
+        if (finishedToolCalls[i]) continue;
+        const buffer = tools[i];
+        await buffer.onApprove(toolCardEl[i]);
+      }
     });
+
     $total.find(".tool-cancel-all").click((e) => {
       e.stopPropagation();
-      $(".tool-cancel").click();
+      $(".tool-approve,.tool-cancel,.tool-approve-all,.tool-cancel-all").prop("disabled", true);
+
+      for (let i = 0; i < tools.length; i++) {
+        if (finishedToolCalls[i]) continue;
+        console.log(':::', i);
+        const buffer = tools[i];
+        buffer.onDeny(toolCardEl[i]);
+      }
+
     });
+
     $("#chat-messages").append($total);
   }
 }

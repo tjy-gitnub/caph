@@ -1,6 +1,6 @@
 
 <div align="center">
-    <img src="./caph.svg" alt="Caph Logo" height="80" align="center"/>
+    <img src="./caph.svg" alt="Caph Logo" height="100" align="center"/>
     <h1 style="margin: 10px;">Caph</h1>
     <p>由 星源 开发 | Developed by Starry Source</p>
 </div>
@@ -17,11 +17,11 @@
 ![](./art/guide.png)
 
 
-## 普通使用
+# 普通使用
 
 在页面右侧 Release 中下载最新版压缩包，解压后即可使用。
 
-## 功能
+# 功能
 
 - AI 聊天
     - md 渲染
@@ -41,12 +41,15 @@
     - 工具管理
     - 自定义工具（要有环境以生成，见下）
 
-## 生成与运行
+# 生成与运行
 
-### 生成
+若你需要自定义工具，只需 Python 环境即可。
 
-1. 使用 Visual Studio 生成（WPF 应用，项目解决方案在 `/viewer/Webapp/Webapp.sln`）。
-2. 需要有 python（3.9 最佳），安装 django。
+## 一、Python 后端
+
+### 环境
+
+需要有 python（3.9 最佳），安装 django, markdown2 等。（自己看报错，求饶orz）
 
 ### 运行
 
@@ -54,8 +57,16 @@
     ```bash
     python manage.py runserver 777
     ```
-2. 打开 Visual Studio 生成的 exe 文件
+2. 打开 Release 下载的包中 `/_/Webapp.exe`。当然如果你修改了外壳窗口，也可以使用你自己的程序。
 
 ### 自定义工具
 
 在 `/py/static/tools.js` 中，具体参见注释说明。
+
+## 二、外壳
+
+外壳主要是 WPF 窗体，通过 CEF 嵌套了 web 界面。
+
+### 环境
+
+Visual Studio 2026，安装 .NET 桌面开发（项目解决方案在 `/viewer/Webapp/Webapp.sln`）。

@@ -57,7 +57,7 @@ class ContentProcessor {
   processSpecialContent(content) {
     // 终止符与深度思考
     if (!content) return "";
-    return content.replace(/\[已终止\]$/, '<span class="stopped-label">已终止</span>').replace(
+    return content.replace(/\[已终止\]$/, '<span class="label lb-stopped">已终止</span>').replace(
       /<think>([\s\S]*?)<\/think>|<think>([\s\S]*?)$/g,
       (match, closed, open) => {
         const thinkContent = closed || open || "";

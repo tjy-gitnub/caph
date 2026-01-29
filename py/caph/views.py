@@ -5,6 +5,11 @@ from webbrowser import open as open_in_browser
 
 from django.views.decorators.csrf import csrf_exempt
 
+# os.system('cls' if os.name == 'nt' else 'clear')
+print('\n\n\n\033c', end='')
+print('服务端已启动。\n')
+print('-'*20,'服务端日志','-'*20+'\n')
+
 def chatpage(r):
     # 0/0
     return render(r,'index.html')

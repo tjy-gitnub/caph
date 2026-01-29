@@ -40,4 +40,14 @@ rd /s /q build
 rd /s /q dist
 del caph.spec
 del caph.py
+
+@REM 生成启动脚本
+set /p CAPH_VERSION=版本号:
+
+echo @echo off > ..\pack\start.bat
+echo set CAPH_VERSION=%CAPH_VERSION% >> ..\pack\start.bat
+echo start .\_\Webapp.exe >> ..\pack\start.bat
+echo echo 请不要关闭此窗口。 >> ..\pack\start.bat
+echo .\_\caph.exe >> ..\pack\start.bat
+
 pause

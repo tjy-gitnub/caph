@@ -6,7 +6,7 @@ const av_tools = [
         function: {
             name: "run_cmd",
             description:
-                `运行 cmd 命令，并返回命令的输出结果。环境: Windows11 x64。当前工作目录在 E: 盘。`,
+                `运行 cmd 命令，并返回命令的输出结果。环境: Windows11 x64。`,
             parameters: {
                 type: "object",
                 properties: {
@@ -80,7 +80,7 @@ const tool_handlers = {
 
 const tool_describers = {
     run_cmd: (args) => {
-        return `运行 cmd 命令<br><code> ${args.command} </code>`;
+        return `运行 cmd 命令 <code>${args.command}</code>`;
     },
     open_url: (args) => {
         return `打开链接 <code>${args.url}</code>`;

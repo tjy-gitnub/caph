@@ -453,6 +453,7 @@ async function sendToServer() {
     let toolCardEl = []; // 工具卡片元素
     let toolCallBuffer = []; // 工具调用列表
     let finishedToolCalls = [];
+    let anyApproved = false;
 
     function aNewToolCallId() {
       return 'toolcall' + Date.now() + Math.random().toString(36).substr(2, 9);
@@ -514,6 +515,89 @@ async function sendToServer() {
           }
           if (toolCallBuffer.length <= toolIndex) {
             toolCallBuffer[toolIndex] = { name: "", arguments: "" };
+
+            toolCallBuffer[toolIndex].onApprove = async ($card) => {
+              dom.updateToolCardState($card, "loading");
+              let result = "";
+
+              const parsedArgs = JSON.parse(toolCallBuffer[toolIndex].arguments);
+              const handler = tool_handlers[toolCallBuffer[toolIndex].name];
+              try {
+                if (handler) result = await handler(parsedArgs);
+                else result = `[找不到工具: ${toolCallBuffer[toolIndex].name}]`;
+                if (typeof result !== "string") {
+                  result = JSON.stringify(result, null, 2);
+                }
+                if (result.length > 2000) {
+                  result = result.substring(0, 2000) + "......[结果过长，已截断]";
+                }
+                console.log("Tool name:", toolCallBuffer[toolIndex].name, "Args:", parsedArgs, "Result:", result);
+
+              } catch (err) {
+                console.error("Tool failed:", err);
+                result = `工具执行失败: ${err.message || err}`;
+              }
+              const toolMessage = {
+                id: Date.now() + Math.random().toString(36).substr(2, 9),
+                content: result,
+                isUser: false,
+                role: "tool",
+                tool: toolCallBuffer[toolIndex].name,
+                tool_call_id: assistantToolMessage.tool_calls[toolIndex].id,
+                timestamp: new Date().toISOString(),
+                description: toolCallBuffer[toolIndex].description
+                // 在响应结束后生成
+              };
+              chatHistory.push(toolMessage);
+              saveHistory();
+
+              dom.renderMessageElement(toolMessage).then(($tm) => {
+                $card.after($tm);
+                dom.updateToolCardResultWithDone($card);
+                dom.scrollToBottom();
+              });
+              finishedToolCalls[toolIndex] = true;
+              anyApproved = true;
+              if (finishedToolCalls.indexOf(false) === -1) {
+                continueAfterTool();
+              }
+            };
+            toolCallBuffer[toolIndex].onDeny = ($card) => {
+              if (assistantToolMessage) {
+                assistantToolMessage.content = fullResponse;
+              }
+
+              const toolMessage = {
+                id: Date.now() + Math.random().toString(36).substr(2, 9),
+                content: '[用户已拒绝]',
+                isUser: false,
+                role: "tool",
+                tool: toolCallBuffer[toolIndex].name,
+                tool_call_id: assistantToolMessage.tool_calls[toolIndex].id,
+                timestamp: new Date().toISOString(),
+                description: toolCallBuffer[toolIndex].description
+                // 在响应结束后生成
+              };
+              chatHistory.push(toolMessage);
+              saveHistory();
+              finishedToolCalls[toolIndex] = true;
+
+              dom.renderMessageElement(toolMessage).then(($tm) => {
+                $card.after($tm);
+                dom.updateToolCardResultWithDone($card);
+                dom.scrollToBottom();
+              });
+              if (finishedToolCalls.indexOf(false) === -1) {
+                if (anyApproved) {
+                  continueAfterTool();
+                } else {
+                  pausingForToolCall = false;
+                  $('#send-button,#toggle-tool').prop('disabled', false);
+                  dom.setLoading(false);
+                }
+              }
+            };
+
             toolCardEl[toolIndex] = null;
             finishedToolCalls[toolIndex] = false;
           }
@@ -577,100 +661,22 @@ async function sendToServer() {
                 type: "function",
                 index: toolIndex,
               };
+            } else {
+              assistantToolMessage.tool_calls[toolIndex].function.name = toolCallBuffer[toolIndex].name;
+              assistantToolMessage.tool_calls[toolIndex].function.arguments = toolCallBuffer[toolIndex].arguments;
             }
-            // 更新现有工具调用参数
-            assistantToolMessage.tool_calls = assistantToolMessage.tool_calls || [];
-            assistantToolMessage.tool_calls[toolIndex] = assistantToolMessage.tool_calls[toolIndex] || { function: { name: "", arguments: "" } };
-            assistantToolMessage.tool_calls[toolIndex].function.arguments = toolCallBuffer[toolIndex].arguments;
             saveHistory();
           }
 
           // 显示工具卡片（只创建一次）
           if (!toolCardEl[toolIndex]) {
-            let result = "";
-            toolCardEl[toolIndex] = dom.createToolCard({
-              name: toolCallBuffer[toolIndex].name,
-              argsText: toolCallBuffer[toolIndex].arguments,
-              beforeEl: $(`.message.assistant.streaming`),
-              onApprove: async ($card) => {
-                dom.updateToolCardState($card, "loading");
-                let parsedArgs;
-
-                parsedArgs = JSON.parse(toolCallBuffer[toolIndex].arguments);
-                const handler = tool_handlers[toolCallBuffer[toolIndex].name];
-                try {
-                  if (handler) result = await handler(parsedArgs);
-                  else result = `[找不到工具: ${toolCallBuffer[toolIndex].name}]`;
-                  if (typeof result !== "string") {
-                    result = JSON.stringify(result, null, 2);
-                  }
-                  if (result.length > 2000) {
-                    result = result.substring(0, 2000) + "......[结果过长，已截断]";
-                  }
-                  console.log("Tool name:", toolCallBuffer[toolIndex].name, "Args:", parsedArgs, "Result:", result);
-
-                } catch (err) {
-                  console.error("Tool execution failed:", err);
-                  result = `工具执行失败: ${err.message || err}`;
-                }
-                const toolMessage = {
-                  id: Date.now() + Math.random().toString(36).substr(2, 9),
-                  content: result,
-                  isUser: false,
-                  role: "tool",
-                  tool: toolCallBuffer[toolIndex].name,
-                  tool_call_id: assistantToolMessage.tool_calls[toolIndex].id,
-                  timestamp: new Date().toISOString(),
-                  description: toolCallBuffer[toolIndex].description
-                };
-                chatHistory.push(toolMessage);
-                saveHistory();
-
-                dom.renderMessageElement(toolMessage).then(($tm) => {
-                  $card.after($tm);
-                  dom.updateToolCardResultWithDone($card);
-                  dom.scrollToBottom();
-                });
-                finishedToolCalls[toolIndex] = true;
-                if (finishedToolCalls.indexOf(false) === -1) {
-                  await continueAfterTool();
-                }
-              },
-              onDeny: async ($card) => {
-                if (assistantToolMessage) {
-                  assistantToolMessage.content = fullResponse;
-                }
-
-                const toolMessage = {
-                  id: Date.now() + Math.random().toString(36).substr(2, 9),
-                  content: '[用户已拒绝]',
-                  isUser: false,
-                  role: "tool",
-                  tool: toolCallBuffer[toolIndex].name,
-                  tool_call_id: assistantToolMessage.tool_calls[toolIndex].id,
-                  timestamp: new Date().toISOString(),
-                  description: toolCallBuffer[toolIndex].description
-                };
-                chatHistory.push(toolMessage);
-                saveHistory();
-                finishedToolCalls[toolIndex] = true;
-
-                dom.renderMessageElement(toolMessage).then(($tm) => {
-                  $card.after($tm);
-                  dom.updateToolCardResultWithDone($card);
-                  dom.scrollToBottom();
-                });
-                if (finishedToolCalls.indexOf(false) === -1) {
-                  await continueAfterTool();
-                }
-              },
-            });
+            toolCardEl[toolIndex] = dom.createToolCard(toolCallBuffer[toolIndex]);
           } else {
-            dom.updateToolCardPreview(toolCardEl[toolIndex], toolCallBuffer[toolIndex].arguments);
-            if (assistantToolMessage) {
-              assistantToolMessage.tool_calls[toolIndex].function.arguments = toolCallBuffer[toolIndex].arguments;
-              saveHistory();
-            }
+            dom.updateToolCardPreview(toolCardEl[toolIndex], toolCallBuffer[toolIndex]);
+            // if (assistantToolMessage) {
+            //   assistantToolMessage.tool_calls[toolIndex].function.arguments = toolCallBuffer[toolIndex].arguments;
+            //   saveHistory();
+            // }
           }
 
         }
@@ -705,7 +711,7 @@ async function sendToServer() {
           }
           if (toolCallBuffer.length > 1) {
             // 整理多个工具卡片
-            dom.arrangeMultipleToolCards(toolCallBuffer.length);
+            dom.arrangeMultipleToolCards(toolCallBuffer, toolCardEl, finishedToolCalls);
           }
         }
         break;
@@ -763,5 +769,4 @@ function opendevtools() {
   }
   $('#devtools-confirm').fadeIn(100);
   $('#app,#settings-modal').removeClass('show');
-  $('#about-modal').hide();
 }

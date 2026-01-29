@@ -62,11 +62,6 @@ if($('#settings-modal').hasClass('show')){
         event.preventDefault();
         settingManager.saveSettings();
     }
-}else if($('#about-modal').is(':visible')){
-    if(event.key=='Escape' || event.key=='Esc'){
-        event.preventDefault();
-        $('#about-close').trigger('click');
-    }
 }else if($('#devtools-confirm').is(':visible')){
     if(event.key=='Escape' || event.key=='Esc'){
         event.preventDefault();
@@ -125,7 +120,7 @@ if($('#settings-modal').hasClass('show')){
         <div style="height: 100%;"><span id="caph">Caph</span></div>
         <div class="buttons">
 
-            <button id="open-about" class="toolbar-button" title="关于">
+            <button onclick="window.cefBridge.openAbout();" class="toolbar-button" title="关于">
                 <span class="sfi">&#xE946;</span>
             </button>
             <button class="toolbar-button" title="隐藏 (Ctrl + 向右)" onclick="window.cefBridge.hideWindow();">
@@ -291,6 +286,9 @@ if($('#settings-modal').hasClass('show')){
                             </div>
                             <span style="font-size:14px;opacity: 0.7;">越低，回答越稳定。</span>
                         </div>
+                        <div class="button" onclick="window.cefBridge.openAbout()" style="margin-bottom: 10px;">
+                            检查更新
+                        </div>
                     </div>
                     <div class="settings-header">
                         <h2 class="settings-title">测试用</h2>
@@ -353,25 +351,6 @@ if($('#settings-modal').hasClass('show')){
             <button id="close-settings" class="button">取消</button>
         </div>
 
-    </div>
-
-    <!-- 关于 -->
-    <div id="about-modal" class="modal-overlay" style="display:none;">
-        <div class="modal-box">
-            <button class="modal-close small-btn" id="about-close" title="关闭 (Esc)"><span class="sfi">&#xE711;</span></button>
-            <div class="modal-content">
-                <span style="font-size: 30px;">Caph</span>
-                <p style="color:var(--text-color); opacity:0.9;">由<a class="a textlike"
-                        href="http://tjy-gitnub.github.io/">星源</a>开发 | Developed by <a class="a textlike">Starry
-                        Source</a></p>
-                <p>
-                    AI 侧边栏工具，基于 Github Models。
-                </p>
-                <p style="margin-top:12px; font-size:13px; opacity:0.8;">开源于 Github <a class="a textlike"
-                        href="https://github.com/tjy-gitnub">tjy-gitnub</a> / <a class="a textlike"
-                        href="https://github.com/tjy-gitnub/caph">caph</a></p>
-            </div>
-        </div>
     </div>
 
     <div id="devtools-confirm" style="display: none;" class="modal-overlay">

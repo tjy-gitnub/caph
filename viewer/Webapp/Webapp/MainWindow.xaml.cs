@@ -96,6 +96,8 @@ namespace Webapp
         public Action animateHideWindow { get; set; }
         public Action openGuideWindow { get; set; }
 
+        public Action openAboutWindow { get; set; }
+
         public void OpenDevTools()
         {
             browserControl.ShowDevTools();
@@ -111,7 +113,7 @@ namespace Webapp
             openGuideWindow?.Invoke();
         }
 
-        public void openUrl(string url)
+        public void OpenUrl(string url)
         {
             // 在默认浏览器中打开链接
             Process.Start(new ProcessStartInfo
@@ -119,6 +121,11 @@ namespace Webapp
                 FileName = "\"" + url + "\"",
                 UseShellExecute = true
             });
+        }
+
+        public void OpenAbout()
+        {
+            openAboutWindow?.Invoke();
         }
     }
 
@@ -222,6 +229,14 @@ namespace Webapp
                 {
                     var guideWindow = new Guide();
                     guideWindow.Show();
+                });
+            };
+            jsInterop.openAboutWindow = () =>
+            {
+                this.Dispatcher.Invoke(() =>
+                {
+                    var aboutWindow = new About();
+                    aboutWindow.ShowDialog();
                 });
             };
 
