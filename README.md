@@ -13,8 +13,9 @@
 
 （请以实际界面和功能为准）
 
-![](./art/image.png)
-![](./art/guide.png)
+![](./art/light.jpg)
+![](./art/image.jpg)
+![](./art/guide.jpg)
 
 
 # 普通使用

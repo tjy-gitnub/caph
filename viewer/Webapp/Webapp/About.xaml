@@ -6,7 +6,7 @@ xmlns:local="clr-namespace:Webapp"
 x:Class="Webapp.About"
 mc:Ignorable="d"
 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-Height="425" Width="470"
+Height="425" Width="450"
 MinHeight="350" MinWidth="450"
 xmlns:cef="clr-namespace:CefSharp.Wpf;assembly=CefSharp.Wpf"
 Icon="/caph.ico"
@@ -22,17 +22,17 @@ Title="关于" WindowBackdropType="Mica" ExtendsContentIntoTitleBar="True">
             <StackPanel>
                 <Image Source="/caph.ico" Height="100"/>
                 <TextBlock Text="Caph" FontSize="25" TextAlignment="Center" Margin="0,8"/>
-                <DockPanel HorizontalAlignment="Center" UseLayoutRounding="False" Margin="0,5">
+                <DockPanel HorizontalAlignment="Center" UseLayoutRounding="False">
                     <TextBlock VerticalAlignment="Center" >由</TextBlock>
                     <ui:HyperlinkButton VerticalAlignment="Center" Margin="5,0" NavigateUri="https://tjy-gitnub.github.io/" >星源</ui:HyperlinkButton>
                     <TextBlock VerticalAlignment="Center" >开发</TextBlock>
                 </DockPanel>
-                <TextBlock TextAlignment="Center" Margin="0,10">用于 Windows 的桌面 Copilot 助手的平替。</TextBlock>
-                <ui:HyperlinkButton HorizontalAlignment="Center" Margin="0,10" Icon="Link20" NavigateUri="https://github.com/tjy-gitnub/caph">tjy-gitnub/caph</ui:HyperlinkButton>
+                <TextBlock TextAlignment="Center" Margin="0,5">用于 Windows 的桌面 Copilot 助手的平替。</TextBlock>
+                <ui:Button Click="OpenGithub" HorizontalAlignment="Center" Icon="{ui:SymbolIcon Link24}">Github: tjy-gitnub/caph</ui:Button>
                 <DockPanel HorizontalAlignment="Center" Margin="0,10">
                     <TextBlock VerticalAlignment="Center">版本：</TextBlock>
                     <TextBlock x:Name="currentVer" VerticalAlignment="Center"></TextBlock>
-                    <ui:Button Click="CheckUpdate" Margin="20,0,0,0">检查更新</ui:Button>
+                    <ui:Button Click="CheckUpdate" Margin="20,0,0,0" Appearance="Primary">检查更新</ui:Button>
                 </DockPanel>
                 <ui:InfoBar x:Name="infoBar" IsClosable="False" Margin="20,10" MaxWidth="500"></ui:InfoBar>
                 <ui:Card Margin="20,10" MaxWidth="500" x:Name="updateCard" Visibility="Collapsed">
@@ -40,7 +40,7 @@ Title="关于" WindowBackdropType="Mica" ExtendsContentIntoTitleBar="True">
                         <TextBlock x:Name="updateText" VerticalAlignment="Center" FontWeight="Bold" HorizontalAlignment="Left">a</TextBlock>
                         <DockPanel VerticalAlignment="Center" HorizontalAlignment="Right">
                             <ui:Button x:Name="viewUpdate" Click="ViewUpdate" Content="查看 Release 页"  VerticalAlignment="Center"/>
-                            <ui:Button x:Name="updateBtn" Click="DownloadUpdate" Content="前往下载" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                            <ui:Button x:Name="updateBtn" Appearance="Primary" Click="DownloadUpdate" Content="前往下载" VerticalAlignment="Center" Margin="10,0,0,0"/>
                         </DockPanel>
                     </DockPanel>
                 </ui:Card>

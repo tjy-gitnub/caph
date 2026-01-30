@@ -3,7 +3,7 @@ from django.core.management import execute_from_command_line
 def main():
     print('''
     Caph
-    版本: %s
+    版本: {}
 
 由星源开发 · Developed by Starry Source
 Github tjy-gitnub/caph

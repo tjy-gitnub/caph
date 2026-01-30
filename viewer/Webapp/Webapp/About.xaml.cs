@@ -35,6 +35,15 @@ namespace Webapp
             currentVer.Text = appVersion;
         }
 
+        private void OpenGithub(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "https://github.com/tjy-gitnub/caph/",
+                UseShellExecute = true
+            });
+        }
+
         private void CheckUpdate(object sender, RoutedEventArgs e)
         {
             var client = new System.Net.WebClient();

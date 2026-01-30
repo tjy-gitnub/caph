@@ -15,20 +15,7 @@ ShowInTaskbar="False">
             <TranslateTransform x:Name="RootTranslate" X="0" />
         </Grid.RenderTransform>
 
-        <!--Border x:Name="header" Padding="7" Grid.Row="0" Background="{ui:ThemeResource}">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition/>
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <TextBlock Text="Caph" VerticalAlignment="Center" FontSize="14" Margin="10,0,0,0"/>
-                <ui:Button x:Name="HideButton" Grid.Column="1" Width="26" Height="26" Margin="8,0,0,0" VerticalAlignment="Center" Padding="0" ToolTip="隐藏" Appearance="Transparent">
-                    <TextBlock FontFamily="Segoe Fluent Icons" FontSize="15" Text="&#xE974;" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </ui:Button>
-            </Grid>
-        </Border-->
-
-        <cef:ChromiumWebBrowser x:Name="cefb" Address="http://localhost:777"/>
+        <cef:ChromiumWebBrowser x:Name="cefb"/>
     </Grid>
 
 </ui:FluentWindow>

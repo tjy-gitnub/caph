@@ -1,6 +1,6 @@
 :root {
-    --primary-color: #2983cc;
-    --primary-hover: #44a1e8;
+    --primary-color: #005fba;
+    --primary-hover: #196ec0;
     --bg-color: #f8f8f8;
     --card-bg: #ffffffc0;
     --input: #f5f5f5a0;
@@ -19,7 +19,7 @@
 
 [data-theme="dark"] {
     --primary-color: #61ccff;
-    --primary-hover: #7ed6ff;
+    --primary-hover: #5abae9;
     --bg-color: #2b2b2b;
     --card-bg: #1b1b1bc0;
     --input: #272727c0;
