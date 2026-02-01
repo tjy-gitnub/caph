@@ -3,7 +3,7 @@ echo 开始打包
 if not exist "..\pack" mkdir "..\pack"
 if not exist "..\pack\_" mkdir "..\pack\_"
 
-rem 只复制指定语言的 .pak 文件（文件名保留，不保留原路径）
+rem 只复制指定语言的 .pak
 if not exist "..\pack\_\locales" mkdir "..\pack\_\locales"
 setlocal enabledelayedexpansion
 set "LANGS=en-US zh-CN zh-TW"
@@ -22,32 +22,25 @@ for %%L in (%LANGS%) do (
 
 endlocal
 
-
-rem 复制 Release 根目录下的文件，排除指定扩展名（不递归子目录）
+rem 复制 Release 下的文件
 robocopy "..\viewer\Webapp\Webapp\bin\Release" "..\pack\_" /XF *.config *.pdb *.xml *.application *.manifest *.log /XD "..\viewer\Webapp\Webapp\bin\Release\locales"
 
-@REM 复制启动代码
-copy /y .\caph.spec ..\py\caph.spec
-copy /y .\startup.py ..\py\caph.py
-copy /y .\start.bat ..\pack\start.bat
+@REM 准备启动代码
+copy /y .\django.spec ..\py\django.spec
+
 cd ..\py
-@REM 打包
-pyinstaller caph.spec --noconfirm
-copy /y .\dist\caph.exe ..\pack\_\caph.exe
+@REM 打包 django
+pyinstaller django.spec --noconfirm
+copy /y .\dist\django.exe ..\pack\_\django.exe
+
 echo py打包完成
+
 @REM 清理临时文件
 rd /s /q build
 rd /s /q dist
-del caph.spec
-del caph.py
+del django.spec
 
-@REM 生成启动脚本
-set /p CAPH_VERSION=版本号:
-
-echo @echo off > ..\pack\start.bat
-echo set CAPH_VERSION=%CAPH_VERSION% >> ..\pack\start.bat
-echo start .\_\Webapp.exe >> ..\pack\start.bat
-echo echo 请不要关闭此窗口。 >> ..\pack\start.bat
-echo .\_\caph.exe >> ..\pack\start.bat
+@REM 移出主程序
+move ..\pack\_\Webapp.exe ..\pack\Caph.exe
 
 pause

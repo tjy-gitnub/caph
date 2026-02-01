@@ -136,19 +136,21 @@ class Settings {
   renderToolSettings() {
     const $toolList = $("#av-tools-list").empty();
     av_tools.forEach(tool => {
-      $toolList.append(`<div class="card">
-        <div class="header">
-          <input type="checkbox" class="tool-enable" data-tool-name="${tool.function.name}" ${settings_data.tools_disabled[tool.function.name]?'':'checked'} onchange="settingManager.toggleToolEnable('${tool.function.name}');">
-          <label class="name" onclick="$(this).prev().click();">${tool.function.name}</label>
+      $toolList.append(`<div class="a" onclick="$(this).find('.tool-enable').click();">
+        <input type="checkbox" class="tool-enable" data-tool-name="${tool.function.name}"
+          ${settings_data.tools_disabled[tool.function.name]?'':'checked'}
+          onchange="settingManager.toggleToolEnable('${tool.function.name}');"
+          onclick="event.stopPropagation();" />
+        <div>
+          <span class="name">${tool.function.name}</span>
+          <div class="description">${tool.function.description}</div>
         </div>
-        <div class="hr"></div>
-        <div class="description">${tool.function.description}</div>
       </div>`);
     });
   }
 
   toggleToolEnable(toolName) {
-    const isEnabled = $(`.tool-enable[data-tool-name="${toolName}"]`).prop("checked");
+    const isEnabled = $(`#a-vtools-list .tool-enable[data-tool-name="${toolName}"]`).prop("checked");
     settings_data.tools_disabled[toolName] = !isEnabled;
   }
 

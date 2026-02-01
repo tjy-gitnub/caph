@@ -12,17 +12,15 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
+using CefSharp;
+using CefSharp.Wpf;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 namespace Webapp
 {
-    using CefSharp;
-    using CefSharp.Wpf;
-    using Microsoft.Win32;
-    using System;
-    using System.Reflection;
-    using System.Runtime.InteropServices;
-    using System.Text;
-    using System.Threading.Tasks;
 
     public class ThemeListener : IDisposable
     {
@@ -185,6 +183,7 @@ namespace Webapp
         private double _animDurationMs = 300.0;
 
         JsInterop jsInterop = new JsInterop();
+        private Process _childProcess;
         public MainWindow()
         {
             CefSettings setting = new CefSettings();
@@ -345,8 +344,8 @@ namespace Webapp
     <span id=""caph"">Caph</span>
     <loading><svg width=""40px"" height=""40px"" viewBox=""0 0 16 16""><circle cx=""8px"" cy=""8px"" r=""6px""></circle></svg></loading>
     <div id=""tip"" style=""color: var(--text);opacity: 0.7;visibility: hidden;display: flex;flex-direction: column;align-items: center;"">
-        <span style=""font-size:19px;"">请检查服务端是否已启动</span>
-        <span style=""font-size:15px;margin-top: 5px;text-align: center;"">如果你刚刚不小心关闭了服务端窗口，请在托盘中退出 Caph 并重新运行。</span>
+        <span style=""font-size:19px;"">服务端进程似乎无法启动</span>
+        <span style=""font-size:15px;margin-top: 5px;text-align: center;"">服务端可能出现代码错误，导致运行停止。尝试在浏览器中访问 http://localhost:777 检查问题。</span>
     </div>
     <script>
         (function poll() {{
@@ -369,10 +368,11 @@ namespace Webapp
 </html>");
         }
 
-        private void Cefb_FrameLoadEnd(object sender, FrameLoadEndEventArgs e)
-        {
-            throw new NotImplementedException();
-        }
+
+        //private void Cefb_FrameLoadEnd(object sender, FrameLoadEndEventArgs e)
+        //{
+        //    throw new NotImplementedException();
+        //}
 
         // 事件处理方法
         private void Browser_LoadError(object sender, CefSharp.LoadErrorEventArgs e)
@@ -419,7 +419,7 @@ namespace Webapp
                 }}
                 </style>
                 <h1>连接错误</h1>
-                <span>请检查控制台输出。</span>
+                <span>请尝试重启 Caph。</span>
                 <p style='user-select: text;'>{e.ErrorCode}: {e.ErrorText}</p>
                 <div style='display:flex;gap:10px;'>
                     <div class='btn p' onclick='document.body.style.opacity=0;window.location.href=""{e.FailedUrl}"";'>刷新</div>
@@ -624,10 +624,21 @@ namespace Webapp
                 AnimateHide(true);
             }
         }
-
         protected override void OnClosed(EventArgs e)
         {
             base.OnClosed(e);
+            if (_childProcess != null && !_childProcess.HasExited)
+            {
+                try
+                {
+                    _childProcess.Kill();
+                    _childProcess.Dispose();
+                }
+                catch
+                {
+                    // 可能已经退出
+                }
+            }
             if (_trayIcon != null)
             {
                 _trayIcon.Visible = false;

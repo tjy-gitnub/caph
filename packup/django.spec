@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['caph.py'],
+    ['manage.py'],
     pathex=[],
     binaries=[('./templates','templates'),
         ('./static','static')],
@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='caph',
+    name='django',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

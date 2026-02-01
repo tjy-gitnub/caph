@@ -357,7 +357,7 @@ class Dom {
             $('#models-settings').addClass('active');
       // }, 300);
       "><span class="sfi">&#xF0E2;</span>管理模型</a>
-      <a class="lnkbtn" onclick="window.open('https://docs.github.com/zh/github-models/use-github-models/prototyping-with-ai-models#rate-limits', '_blank')">Github 模型额度</a>
+      <a class="lnkbtn" onclick="window.cefBridge.openUrl('https://docs.github.com/zh/github-models/use-github-models/prototyping-with-ai-models#rate-limits')">Github 模型额度</a>
     </div>`);
     if (input_container) {
       console.log('a');

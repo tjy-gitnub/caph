@@ -266,7 +266,7 @@ if($('#settings-modal').hasClass('show')){
                             <input type="text" class="input-field" id="setting-token" placeholder="输入你的 Github Token"
                                 oninput="$(this).removeClass('error')">
 
-                            <span style="font-size:14px;opacity: 0.7;">注意要选择 Github Models 的访问权限。</span>
+                            <div style="font-size:14px;opacity: 0.7;margin-top: 5px;">需要 Models 访问权限。<span class="lnkbtn" onclick="window.cefBridge.openGuide()" style="display: inline;">如何获取？</span></div>
                         </div>
                         <div class="form-field">
                             <label>基础提示词</label>
@@ -284,7 +284,7 @@ if($('#settings-modal').hasClass('show')){
                                 <input type="range" id="setting-temperature" min="0" max="1" step="0.1" value="0.7">
                                 <span class="range-value">0.7</span>
                             </div>
-                            <span style="font-size:14px;opacity: 0.7;">越低，回答越稳定。</span>
+                            <div style="font-size:14px;opacity: 0.7;">越低，回答越稳定。</div>
                         </div>
                         <div class="button" onclick="window.cefBridge.openAbout()" style="margin-bottom: 10px;">
                             检查更新
@@ -302,15 +302,15 @@ if($('#settings-modal').hasClass('show')){
                                 <option value="light">浅色</option>
                                 <option value="dark">深色</option>
                             </select>
-                            <span
-                                style="font-size:14px;opacity: 0.7;">不建议手动设置。此项只决定内容的颜色主题，程序外壳的颜色会始终跟随系统，设置此项会造成背景与内容的颜色主题不匹配。</span>
+                            <div
+                                style="font-size:14px;opacity: 0.7;">不建议手动设置。此项只决定内容的颜色主题，程序外壳的颜色会始终跟随系统，设置此项会造成背景与内容的颜色主题不匹配。</div>
                         </div>
                         <div class="form-field">
                             <label class="checkbox-wrapper">
                                 <input type="checkbox" id="setting-stream">
                                 <span>启用流式响应</span>
                             </label>
-                            <span style="font-size:14px;opacity: 0.7;">保持勾选，不要关闭。</span>
+                            <div style="font-size:14px;opacity: 0.7;">保持勾选，不要关闭。</div>
                         </div>
                     </div>
                 </div>
@@ -322,10 +322,11 @@ if($('#settings-modal').hasClass('show')){
                         <span style="font-size:14px;opacity: 0.7;">管理AI模型，添加、删除或调整顺序。</span>
                         <div style="display: flex;">
                             <a class="lnkbtn"
-                                onclick="window.open('https:\/\/github.com/marketplace?task=chat-completion&type=models', '_blank')">浏览
+                                onclick="window.cefBridge.openUrl('https:\/\/github.com/marketplace?task=chat-completion&type=models')">浏览
                                 Github Models</a>
                             <a class="lnkbtn"
-                                onclick="window.open('https:\/\/docs.github.com/zh/github-models/use-github-models/prototyping-with-ai-models#rate-limits', '_blank')">浏览额度</a>
+                                onclick="window.cefBridge.openUrl('https:\/\/docs.github.com/zh/github-models/use-github-models/prototyping-with-ai-models#rate-limits')">浏览额度</a>
+                            <a class="lnkbtn" onclick="window.cefBridge.openGuide()">查看帮助</a>
                         </div>
                     </div>
                     <div class="models-grid" id="model-list">
@@ -336,7 +337,7 @@ if($('#settings-modal').hasClass('show')){
                 <div class="settings-section" id="tools-settings">
                     <div class="settings-header">
                         <h2 class="settings-title">工具</h2>
-                        <span style="font-size:14px;opacity: 0.7;">查看所有可用工具。</span>
+                        <span style="font-size:14px;opacity: 0.7;display: block;line-height: 1.3;margin-top: 5px;">查看所有可用工具。勾选代表启用此工具。你可以在输入框下方启用或禁用全部工具。</span>
                     </div>
                     <div class="list" id="av-tools-list">
                     </div>

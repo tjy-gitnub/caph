@@ -412,35 +412,21 @@ textarea.input-field {
 #av-tools-list{
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    /* gap: 10px; */
 
-    >.card{
-        padding: 10px 12px;
-        border-radius: 8px;
-        background: var(--card-bg);
-        border: 1px solid var(--border-color);
-        display: flex;
-        flex-direction: column;
+    >.a{
         gap: 8px;
-        >.header{
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            >.toggle{
-                cursor: default;
-                border: none;
-                background: none;
-                color: var(--text-color);
-                font-size: 16px;
-                padding: 0;
+        >div{
+            padding-bottom: 8px;
+            >.name{
+                font-size: 17px;
                 margin: 0;
             }
-            >.name{
-                font-size: 18px;
+            >.description{
+                font-size: 14px;
+                opacity: 0.7;
+                line-height: 1.2;
             }
-        }
-        >.description{
-            font-size: 14px;
         }
     }
 }
