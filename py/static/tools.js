@@ -200,7 +200,7 @@ const av_tools = [
         type: "function",
         function: {
             name: "read_file",
-            description: `读取受限扩展名的文本内容（.txt .md .py .json .csv .log）。`,
+            description: `读取文本内容。（受限扩展名）`,
             parameters: {
                 type: "object",
                 properties: {

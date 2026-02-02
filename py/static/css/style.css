@@ -487,6 +487,7 @@ loading>svg {
     font-size: 16px;
     /* line-height: 1.6; */
     letter-spacing: 0.2px;
+    word-break: break-word;
 }
 
 .message-header {

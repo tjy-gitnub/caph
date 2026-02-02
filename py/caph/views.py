@@ -11,14 +11,16 @@ import time
 
 DOC_DIR = (Path.home()/'Documents') if (Path.home()/'Documents').exists() else Path.home()
 DESKTOP_DIR = (Path.home()/'Desktop') if (Path.home()/'Desktop').exists() else Path.home()
-ALLOWED_READ_EXT = {'.txt', '.md', '.py', '.json', '.csv', '.log'}
+ALLOWED_READ_EXT = {'.txt', '.md', '.py', '.json', '.csv', '.log', '.cfg', '.ini', '.html', '.js', '.css', '.xml', '.cpp', '.java', '.bat', '.sh'}
 MAX_READ_SIZE = 2 * 1024 * 1024  # 2MB
 
 def _safe_resolve(p):
     try:
         p = Path(p)
         if not p.is_absolute():
-            p = (Path('.').resolve() / p)
+            p = (Path('.').resolve() / p).resolve()
+        print(str(p))
+        p=Path(os.path.expandvars(p))
         if p.is_relative_to(Path('.').resolve()):
             return p
         else:
@@ -36,19 +38,6 @@ ALLOWED_READ_EXTS = {'.txt', '.md', '.py', '.json', '.cfg', '.ini', '.log', '.cs
 def make_response(text, status=200):
     return HttpResponse(text, status=status, headers={'Access-Control-Allow-Origin': '*'})
 
-def resolve_safe(path_str):
-    p = Path(path_str)
-    if not p.is_absolute():
-        p = ROOT_DIR.joinpath(p)
-    p = p.resolve()
-    if not p.exists():
-        # still ensure it's under ROOT_DIR when creating new
-        if not p.is_relative_to(ROOT_DIR):
-            raise PermissionError("路径超出允许范围")
-    else:
-        if not p.resolve().is_relative_to(ROOT_DIR):
-            raise PermissionError("路径超出允许范围")
-    return p
 
 def ready(r):
     return HttpResponse('well',headers={'Access-Control-Allow-Origin': '*'})
@@ -127,8 +116,10 @@ def move_file_or_folder(r):
     os.chdir(r.POST.get('cwd',DOC_DIR))
     src = _safe_resolve(r.POST.get('src',''))
     dst = _safe_resolve(r.POST.get('dst','')) # 目标（文件或文件夹）
-    if not src or not src.exists():
-        return HttpResponse('[错误：源路径不允许或不存在]')
+    if not src:
+        return HttpResponse('[错误：源路径不允许]')
+    if not src.exists():
+        return HttpResponse('[错误：源路径不存在]')
     if src == Path('.').resolve():
         return HttpResponse('[错误：不能移动当前工作目录]')
     if not dst:
@@ -146,10 +137,12 @@ def copy_file_or_folder(r):
     os.chdir(r.POST.get('cwd',DOC_DIR))
     src = _safe_resolve(r.POST.get('src',''))
     dst = _safe_resolve(r.POST.get('dst','')) # 目标（文件或文件夹）
-    if not src or not src.exists():
-        return HttpResponse('[错误：源路径不允许或不存在]')
+    if not src:
+        return HttpResponse('[错误：源路径越出工作目录]')
+    if not src.exists():
+        return HttpResponse('[错误：源路径不存在]')
     if not dst:
-        return HttpResponse('[错误：目标路径不允许]')
+        return HttpResponse('[错误：目标路径越出工作目录]')
     if dst.exists():
         return HttpResponse('[错误：目标已存在]')
     try:
@@ -174,8 +167,10 @@ def rename_file_or_folder(r):
     os.chdir(r.POST.get('cwd',DOC_DIR))
     src = _safe_resolve(r.POST.get('src',''))
     new_name:str = r.POST.get('new_name','')
-    if not src or not src.exists():
-        return HttpResponse('[错误：源路径不允许或不存在]')
+    if not src:
+        return HttpResponse('[错误：源路径越出工作目录]')
+    if not src.exists():
+        return HttpResponse('[错误：源路径不存在]')
     if src.parent.joinpath(new_name).exists():
         return HttpResponse(f'[错误：{new_name} 已存在]')
     # 防止重命名为非法名称
@@ -199,8 +194,10 @@ def _format_size(size_bytes):
 def get_file_or_folder_props(r):
     os.chdir(r.POST.get('cwd',DOC_DIR))
     path = _safe_resolve(r.POST.get('path',''))
-    if not path or not path.exists():
-        return HttpResponse('[错误：路径不允许或不存在]')
+    if not path:
+        return JsonResponse({'error': '路径越出工作目录'})
+    if not path.exists():
+        return JsonResponse({'error': '路径不存在'})
     if path.is_file():
         size = path.stat().st_size
     else:
@@ -223,8 +220,10 @@ def open_file(r):
     os.chdir(r.POST.get('cwd',DOC_DIR))
     path = _safe_resolve(r.POST.get('path',''))
 
-    if not path or not path.exists():
-        return HttpResponse('[错误：路径不允许或不存在]')
+    if not path:
+        return HttpResponse('[错误：路径越出工作目录]')
+    if not path.exists():
+        return HttpResponse('[错误：文件不存在]')
     try:
         os.startfile(str(path))
         return HttpResponse(f'{path} 已打开')
@@ -236,8 +235,10 @@ def open_file(r):
 def reveal_in_explorer(r):
     os.chdir(r.POST.get('cwd',DOC_DIR))
     path = _safe_resolve(r.POST.get('path',''))
-    if not path or not path.exists():
-        return HttpResponse('[错误：路径不允许或不存在]')
+    if not path:
+        return HttpResponse('[错误：路径越出工作目录]')
+    if not path.exists():
+        return HttpResponse('[错误：文件或文件夹不存在]')
     try:
         if path.is_dir():
             sp_run(['explorer', str(path.resolve())])
@@ -253,7 +254,7 @@ def read_file(r):
     path = _safe_resolve(r.POST.get('path',''))
     encoding = r.POST.get('encoding','utf-8')
     if not path:
-        return HttpResponse('[错误：路径不允许或无效]')
+        return HttpResponse('[错误：路径越出工作目录]')
     if not path.exists() or not path.is_file():
         return HttpResponse('[错误：文件不存在]')
     if path.suffix.lower() not in ALLOWED_READ_EXT:
@@ -275,7 +276,7 @@ def write_file(r):
     content = r.POST.get('content','')
     encoding = r.POST.get('encoding','utf-8')
     if not path:
-        return HttpResponse('[错误：路径不允许或无效]')
+        return HttpResponse('[错误：路径越出工作目录]')
     try:
         # 创建父目录
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -289,7 +290,7 @@ def list_directory(r):
     os.chdir(r.POST.get('cwd',DOC_DIR))
     path = _safe_resolve(r.POST.get('path',''))
     if not path:
-        return HttpResponse('[错误：路径不允许或无效]')
+        return HttpResponse('[错误：路径越出工作目录]')
     if not path.exists() or not path.is_dir():
         return HttpResponse('[错误：目录不存在]')
     items = []
@@ -297,21 +298,16 @@ def list_directory(r):
         item = {
             'name': entry.name,
             'type': 'file' if entry.is_file() else 'folder',
-            'mtime': time.ctime(entry.stat().st_mtime),
+            # 'mtime': time.ctime(entry.stat().st_mtime),
         }
         if entry.is_file():
             item['size'] = _format_size(entry.stat().st_size)
-        elif entry.is_dir():
-            # 有几个文件、文件夹
-            num_files = sum(1 for f in entry.iterdir() if f.is_file())
-            num_folders = sum(1 for f in entry.iterdir() if f.is_dir())
-            item['info']=f'{num_files} 个文件, {num_folders} 个文件夹'
         items.append(item)
     return JsonResponse(items, safe=False) # safe=False 允许返回列表
 
 @csrf_exempt
 def change_directory(r):
-    path=r.POST.get('path','.')
+    path=Path(os.path.expandvars(os.path.expanduser(r.POST.get('path','.'))))
     path = (Path('.').resolve() / path).resolve()
     if not path.exists() or not path.is_dir():
         return JsonResponse({'status': 'error', 'message': '[错误：目录不存在]'})

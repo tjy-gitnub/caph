@@ -394,7 +394,7 @@ async function sendToServer() {
     // 构建消息历史（包含system prompt）
     const active = convManager.getActive();
     const enableTool = localStorage.getItem("enableTool") === "true";
-    const systemPrompt = settings_data.simplePrompt + (enableTool ? '\n\n' + settings_data.toolCallPrompt + '\n\n默认的工作目录在用户的 Documents 文件夹。系统会阻止越出当前工作目录的操作，如果要操作其它位置，请先切换工作目录。' : '');
+    const systemPrompt = settings_data.simplePrompt + (enableTool ? '\n\n' + settings_data.toolCallPrompt + '\n\n默认的工作目录在用户的 Documents 文件夹。越出当前工作目录的操作都会被阻止，如果要操作其它位置，必须用change_directory工具切换工作目录。' : '');
     const temperature = settings_data.temperature ?? 0.7;
     const modelToUse = active?.model || currentModel;
 
@@ -526,7 +526,7 @@ async function sendToServer() {
               try {
                 if (handler) result = await handler(parsedArgs);
                 else result = `[找不到工具: ${toolCallBuffer[toolIndex].name}]`;
-                if(toolCallBuffer[toolIndex].name==='cd'){
+                if(toolCallBuffer[toolIndex].name==='change_directory'){
                   if(result.status==='success'){
                     cwdChanged=true;
                     cwd_now=result.cwd;
@@ -538,8 +538,8 @@ async function sendToServer() {
                 if (typeof result !== "string") {
                   result = JSON.stringify(result, null, 2);
                 }
-                if (result.length > 2000) {
-                  result = result.substring(0, 2000) + "......[结果过长，已截断]";
+                if (result.length > 3000) {
+                  result = result.substring(0, 3000) + "......[结果过长，已截断]";
                 }
                 console.log("Tool name:", toolCallBuffer[toolIndex].name, "Args:", parsedArgs, "Result:", result);
 
