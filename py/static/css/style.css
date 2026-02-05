@@ -588,8 +588,39 @@ loading>svg {
     background: transparent;
     border: none;
     height: 63px;
-    padding: 12px 14px;
-    padding-bottom: 3px;
+    padding: 3px 14px;
+}
+
+#input-container>.attachment {
+    font-size: 13px;
+    padding: 5px 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+#input-container>.attachment>div{
+    gap: 3px;
+    padding: 5px 8px;
+    >span{
+        display: inline;
+        line-height: 1;
+    }
+}
+
+#input-container>.attachment>.a{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 100ms;
+    border-radius: 5px;
+}
+
+#input-container>.attachment>.a:hover{
+    background-color: var(--hover-color);
+}
+#input-container>.attachment>.a:active{
+    opacity: 0.6;
 }
 
 /* #input-container>.textarea:hover {

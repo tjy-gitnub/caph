@@ -208,6 +208,15 @@ if($('#settings-modal').hasClass('show')){
             <div id="chat-messages" class="chat-container"></div>
 
             <div class="input-container textarea-like" id="input-container">
+                <div class="attachment">
+                    <div class="a cwd" title="切换工作目录" onclick="dom.selectCwd()">
+                        <span class="sfi">&#xE8B7;</span>
+                        <span>工作目录: </span><span id="current-cwd" class="a">获取失败</span>
+                    </div>
+                    <span class="a cwd" title="什么是工作目录？" style="padding: 0 5px; margin-left: -3px;" onclick="showCommandResponse('<h2>什么是工作目录？</h2><p> AI 只能在工作目录内操作文件。<b>越出工作目录的操作会被阻止。</b></p><p>当然，AI 可以自主更改工作目录，更改前会要求你确认。</p>');">
+                        <span class="sfi">&#xE897;</span>
+                    </span>
+                </div>
                 <textarea id="message-input" class="textarea" placeholder="Shift + Enter 换行，Enter 发送。
 发送  &quot;/help&quot; 查看帮助。"></textarea>
                 <div class="input-buttons">

@@ -143,6 +143,16 @@ async function handleSendMessage() {
   }
 }
 
+function showCommandResponse(message) {
+  const $message = $(`
+                <div class="message system">
+                    <div class="message-content">${message}</div>
+                </div>
+            `);
+  $("#chat-messages").append($message);
+  dom.scrollToBottom();
+};
+
 /**
  * 处理命令
  * @param {string} commandText 命令文本
@@ -150,16 +160,6 @@ async function handleSendMessage() {
 function handleCommand(commandText) {
   const args = commandText.slice(1).split(" ");
   const command = args.shift().toLowerCase();
-
-  const showCommandResponse = (message) => {
-    const $message = $(`
-                <div class="message system">
-                    <div class="message-content">${message}</div>
-                </div>
-            `);
-    $("#chat-messages").append($message);
-    dom.scrollToBottom();
-  };
 
   switch (command) {
     case "help":
@@ -341,12 +341,16 @@ function saveHistory() {
 function deleteMessage(id) {
   let index = chatHistory.findIndex((msg) => msg.id === id);
   if (index !== -1) {
-    chatHistory.splice(index, 1);
-    // $(`[data-id="${id}"]`).remove();
-    index--;
-    while (index > 0 && (chatHistory[index].role === 'tool' || chatHistory[index].role === 'assistant')) {
+    if (chatHistory[index].role == 'assistant') {
       chatHistory.splice(index, 1);
+      // $(`[data-id="${id}"]`).remove();
       index--;
+      while (index > 0 && (chatHistory[index].role === 'tool' || chatHistory[index].role === 'assistant')) {
+        chatHistory.splice(index, 1);
+        index--;
+      }
+    } else {
+      chatHistory.splice(index, 1);
     }
     saveHistory();
     dom.renderChatHistory();
@@ -394,7 +398,7 @@ async function sendToServer() {
     // 构建消息历史（包含system prompt）
     const active = convManager.getActive();
     const enableTool = localStorage.getItem("enableTool") === "true";
-    const systemPrompt = settings_data.simplePrompt + (enableTool ? '\n\n' + settings_data.toolCallPrompt + '\n\n默认的工作目录在用户的 Documents 文件夹。越出当前工作目录的操作都会被阻止，如果要操作其它位置，必须用change_directory工具切换工作目录。' : '');
+    const systemPrompt = settings_data.simplePrompt + (enableTool ? '\n\n' + settings_data.toolCallPrompt + '\n\n默认的工作目录在用户的 Documents 文件夹。越出当前工作目录的操作都会被阻止，如果你要操作其它位置，必须先用change_directory工具切换工作目录。' : '');
     const temperature = settings_data.temperature ?? 0.7;
     const modelToUse = active?.model || currentModel;
 
@@ -402,6 +406,7 @@ async function sendToServer() {
       { role: "system", content: systemPrompt },
       ...chatHistory.map((m) => {
         if (m.isUser) return { role: "user", content: m.content };
+        if (m.role === "system") return { role: "system", content: m.content };
         if (m.role === "tool") return { role: "tool", name: m.tool, content: m.content, tool_call_id: m.tool_call_id };
         // assistant (可能包含tool_calls)
         const obj = { role: "assistant", content: m.content || "" };
@@ -522,17 +527,18 @@ async function sendToServer() {
 
               const parsedArgs = JSON.parse(toolCallBuffer[toolIndex].arguments);
               const handler = tool_handlers[toolCallBuffer[toolIndex].name];
-              let cwdChanged = false,cwd_now;
+              let cwdChanged = false, cwd_now;
               try {
                 if (handler) result = await handler(parsedArgs);
                 else result = `[找不到工具: ${toolCallBuffer[toolIndex].name}]`;
-                if(toolCallBuffer[toolIndex].name==='change_directory'){
-                  if(result.status==='success'){
-                    cwdChanged=true;
-                    cwd_now=result.cwd;
-                    result=`当前工作目录为 ${result.cwd}`;
-                  }else{
-                    result=result.message;
+                if (toolCallBuffer[toolIndex].name === 'change_directory') {
+                  if (result.status === 'success') {
+                    cwdChanged = true;
+                    cwd_now = result.cwd;
+                    result = `当前工作目录为 ${result.cwd}`;
+                    $('#current-cwd').text(convManager.getcwd() || '文档');
+                  } else {
+                    result = result.message;
                   }
                 }
                 if (typeof result !== "string") {
@@ -558,8 +564,8 @@ async function sendToServer() {
                 description: toolCallBuffer[toolIndex].description,
                 // 在响应结束后生成
               };
-              if(cwdChanged){
-                toolMessage.cwd=cwd_now;
+              if (cwdChanged) {
+                toolMessage.cwd = cwd_now;
               }
               chatHistory.push(toolMessage);
               saveHistory();

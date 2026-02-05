@@ -1,7 +1,14 @@
-﻿using Microsoft.Win32;
+﻿using CefSharp;
+using CefSharp.Wpf;
+using Microsoft.Win32;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Forms;
@@ -12,12 +19,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
-using CefSharp;
-using CefSharp.Wpf;
-using System.Linq;
-using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Threading.Tasks;
+using System.Threading;
 
 namespace Webapp
 {
@@ -125,6 +127,34 @@ namespace Webapp
         public void OpenAbout()
         {
             openAboutWindow?.Invoke();
+        }
+        [STAThread]
+        public string SelectFolder()
+        {
+
+            string selectedPath = "";
+
+            Thread t = new Thread((ThreadStart)(() => {
+                using (var dialog = new FolderBrowserDialog())
+                {
+                    dialog.Description = "请选择文件夹";
+                    dialog.ShowNewFolderButton = true;
+                    if (dialog.ShowDialog() == DialogResult.OK)
+                    {
+                        selectedPath = dialog.SelectedPath;
+                    }
+                    else
+                    {
+                        selectedPath = string.Empty;
+                    }
+                }
+            }));
+
+            // Run your code from a thread that joins the STA Thread
+            t.SetApartmentState(ApartmentState.STA);
+            t.Start();
+            t.Join();
+            return selectedPath;
         }
     }
 

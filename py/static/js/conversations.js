@@ -279,7 +279,7 @@ class ConversationManager {
 		// 向上查找最近的 cwd 设置
 		for (let i = c.messages.length - 1; i >= 0; i--) {
 			const msg = c.messages[i];
-			if (msg.role !== 'tool') continue;
+			if (msg.role !== 'tool' && msg.role !== 'system') continue;
 			if (msg.cwd) return msg.cwd;
 		}
 		return null;

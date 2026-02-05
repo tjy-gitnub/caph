@@ -135,6 +135,7 @@ class Dom {
     // 加载消息
     chatHistory = Array.isArray(active.messages) ? active.messages.slice() : [];
     this.renderChatHistory();
+    $('#current-cwd').text(convManager.getcwd() || '文档');
   }
 
   // 历史记录渲染
@@ -186,7 +187,6 @@ class Dom {
     } else {
       $("#chat-header").removeClass("greeting");
     }
-
     this.scrollToBottom();
   }
 
@@ -294,6 +294,15 @@ class Dom {
         </div>
         <div class="message-content">${message.content}</div>
       </div>`);
+    }else if(message.role==="system"){
+      return $(
+      `
+            <div class="message system" data-id="${message.id}">
+                <div class="message-content"></div>
+            </div>
+        `
+    );
+
     } else {
       senderName = settings_data.models[message.model] || message.model || "AI";
     }
@@ -384,12 +393,16 @@ class Dom {
     if (localStorage.getItem("enableTool") === null) {
       localStorage.setItem("enableTool", "true");
     }
-    $("#toggle-tool").toggleClass("primary", localStorage.getItem("enableTool") === "true");
+
+    const toolCallEnabled=localStorage.getItem("enableTool") === "true";
+    $("#toggle-tool").toggleClass("primary", toolCallEnabled);
+    $('#input-container>.attachment>.cwd').toggle(toolCallEnabled);
 
     $("#toggle-tool").on("click", function () {
       $(this).toggleClass("primary");
       const enabled = $(this).hasClass("primary");
       localStorage.setItem("enableTool", enabled ? "true" : "false");
+      $('#input-container>.attachment>.cwd').toggle(enabled);
     });
 
     // 加载模型列表
@@ -631,5 +644,32 @@ class Dom {
     });
 
     $("#chat-messages").append($total);
+  }
+
+  selectCwd() {
+    // 选择文件夹
+    window.cefBridge.selectFolder().then(cwd=>{
+      if(typeof cwd !== 'string' || !cwd.trim()) return;
+      const conv = convManager.getActive();
+      if(!conv) return;
+      const systemMessage = {
+        id: Date.now() + Math.random().toString(36).substr(2, 9),
+        content: `工作目录已切换到 ${cwd}` ,
+        isUser: false,
+        role: 'system',
+        timestamp: new Date().toISOString(),
+        cwd: cwd,
+      }
+      chatHistory.push(systemMessage);
+      let index=chatHistory.length-1;
+      while(index>0){
+        index--;
+        if(chatHistory[index].role === 'system' && chatHistory[index].cwd){
+          chatHistory.splice(index,1);
+        }
+      }
+      saveHistory();
+      convManager.triggerChange();
+    });
   }
 }
