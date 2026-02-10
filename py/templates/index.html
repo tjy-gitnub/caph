@@ -1,11 +1,5 @@
 <!DOCTYPE html>
 <html>
-<!-- - 改用 CEF 嵌套，统一 UI。
-- 新增使用指南、疑难与功能文档。
-- 键盘快捷键。
-- 优化流式回答，优化 katex 渲染。
-- 分离工具提示词。
-- 细节优化、修复。 -->
 <head>
     <title>Caph</title>
     <meta charset="UTF-8">
@@ -16,14 +10,16 @@
     <link rel="stylesheet" href="static/css/message.css">
 
     <script src="static/js/jq.min.js"></script>
-    <script src="static/js/marked.min.js"></script>
 
-    <!-- KaTeX -->
+    <!-- 渲染 -->
+    <script src="static/js/marked.min.js"></script>
+    <script src="static/lib/auto-render.min.js"></script>
+
+    <!-- KaTeX 公式 -->
     <link rel="stylesheet" href="static/lib/katex.min.css">
     <!-- <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.css"> -->
     <script src="static/lib/katex.min.js"></script>
-    <script src="static/lib/auto-render.min.js"></script>
-
+    
     <!-- 代码高亮 -->
     <link href="static/lib/prism.css" rel="stylesheet" />
     <script src="static/lib/prism.js"></script>
@@ -31,18 +27,18 @@
 
     <script src="static/js/processor.js"></script>
     <script src="static/js/settings.js"></script>
-    <script src="static/js/dom.js"></script>
     <script src="static/js/conversations.js"></script>
+    <script src="static/js/dom.js"></script>
 
     <script src="static/tools.js"></script>
     <script src="static/config.js"></script>
 
     <script src="static/js/app.js"></script>
+
     <base target="_blank">
 </head>
 
 <body onkeydown="
-console.log(event.key);
 if(event.key=='F12' || event.key=='f12' || (event.ctrlKey && event.shiftKey && (event.key=='I' || event.key=='i'))){
     opendevtools();
 }else if(event.key=='F5' || event.key=='f5' || (event.ctrlKey && (event.key=='R' || event.key=='r'))){
@@ -79,7 +75,7 @@ if($('#settings-modal').hasClass('show')){
 }else if($('#app').hasClass('show')){
     if(event.ctrlKey && event.key=='n'){
         event.preventDefault();
-        conversationManager.createConversation();
+        convManager.createConversation();
     }else if(event.ctrlKey && (event.key=='s' || event.key=='S')){
         const payload = convManager.exportActiveConversation();
         if (!payload) {
@@ -130,19 +126,9 @@ if($('#settings-modal').hasClass('show')){
     </div>
     <div class="app-container show" id="app">
         <div id="sidebar" class="sidebar">
-            <!-- <div id="token-error" class="token-error" style="display: none;" onclick="settingManager.openSettings()">
-                请先配置 Github Token
-            </div> -->
 
-            <!-- <div class="list">
-                <div id="export-conversation" class="a">
-                    <span class="sfi">&#xE74E;</span>
-                    导出当前对话
-                </div>
-            </div>
-            <div class="hr"></div> -->
             <div class="list">
-                <div class="a" title="新建空对话" onclick="conversationManager.createConversation();">
+                <div class="a" title="新建空对话" onclick="convManager.createConversation();">
                     <span class="sfi">&#xE710;</span> 新建对话
                     <span class="detail">Ctrl + N</span>
                 </div>
@@ -157,10 +143,6 @@ if($('#settings-modal').hasClass('show')){
             <div class="hr"></div>
 
             <div class="list">
-                <!-- <div id="open-settings" class="a">
-                    <span class="sfi">&#xE713;</span>
-                    设置
-                </div> -->
                 <div class="a" title="使用指南" onclick="window.cefBridge.openGuide();">
                     <span class="sfi">&#xE82F;</span>
                     使用指南
@@ -168,30 +150,27 @@ if($('#settings-modal').hasClass('show')){
                 </div>
 
                 <div id="open-devtools" class="a" title="打开 Devtools" onclick="opendevtools();">
-                    <!-- <span class="sfi">&#xE62A;</span> -->
                     <span class="sfi">&#xE912;</span>
                     打开 Devtools
                     <span class="detail">F12</span>
                 </div>
             </div>
-            <!-- <div style="margin-top: auto;padding: 5px 14px; opacity: 0.7; text-align: center;font-size: 0.9em;line-height: 1.3em;">
-                Developed by <nobr>Starry Source</nobr>
-            </div> -->
         </div>
 
         <main class="main-content">
             <header class="chat-header" id="chat-header">
                 <div class="model-selector">
+                    <!-- 已废弃，保留占位 -->
                     <!-- <div id="current-model">
                         <span>?</span>
                     </div> -->
                 </div>
                 <div class="buttons">
 
-                    <div id="token-error" class="token-error" style="display: none;"
+                    <!-- <div id="token-error" class="token-error" style="display: none;"
                         onclick="settingManager.openSettings()">
-                        请先配置 Github Token
-                    </div>
+                        请先配置服务商密钥
+                    </div> -->
                     <button id="export-conversation" class="toolbar-button" title="导出对话 (Ctrl + S)">
                         <span class="sfi">&#xE74E;</span>
                         导出
@@ -206,7 +185,11 @@ if($('#settings-modal').hasClass('show')){
             </header>
 
             <div id="chat-messages" class="chat-container"></div>
-
+            <div style="height: 0;max-height: 0;position: relative;width: 100%;">
+                <div id="scroll-to-bottom" class="button primary sfi" title="返回底部" onclick="dom.scrollToBottom(true);">
+                    &#xE70D;
+                </div>
+            </div>
             <div class="input-container textarea-like" id="input-container">
                 <div class="attachment">
                     <div class="a cwd" title="切换工作目录" onclick="dom.selectCwd()">
@@ -240,7 +223,7 @@ if($('#settings-modal').hasClass('show')){
         </main>
     </div>
 
-    <!-- 隐藏的导入文件 input -->
+    <!-- 导入文件 input -->
     <input type="file" id="import-file" accept=".json" style="display:none" />
 
     <!-- 设置面板 -->
@@ -252,9 +235,12 @@ if($('#settings-modal').hasClass('show')){
                         <span class="sfi">&#xE713;</span>
                         通用设置
                     </div>
+                    <div class="settings-menu-item a" data-section="providers">
+                        <span class="sfi">&#xE753;</span>
+                        服务商
+                    </div>
                     <div class="settings-menu-item a" data-section="models">
                         <span class="sfi">&#xF0E2;</span>
-                        <!-- <span class="sfi">&#xE74C;</span> -->
                         管理模型
                     </div>
                     <div class="settings-menu-item a" data-section="tools">
@@ -271,13 +257,6 @@ if($('#settings-modal').hasClass('show')){
                     </div>
                     <div class="settings-form">
                         <div class="form-field">
-                            <label>Github Token</label>
-                            <input type="text" class="input-field" id="setting-token" placeholder="输入你的 Github Token"
-                                oninput="$(this).removeClass('error')">
-
-                            <div style="font-size:14px;opacity: 0.7;margin-top: 5px;">需要 Models 访问权限。<span class="lnkbtn" onclick="window.cefBridge.openGuide()" style="display: inline;">如何获取？</span></div>
-                        </div>
-                        <div class="form-field">
                             <label>基础提示词</label>
                             <textarea class="input-field textarea textarea-like" id="setting-simple-prompt" rows="4"
                                 placeholder="基础部分的系统提示词，用以告知AI一些基础信息。"></textarea>
@@ -293,9 +272,9 @@ if($('#settings-modal').hasClass('show')){
                                 <input type="range" id="setting-temperature" min="0" max="1" step="0.1" value="0.7">
                                 <span class="range-value">0.7</span>
                             </div>
-                            <div style="font-size:14px;opacity: 0.7;">越低，回答越稳定。</div>
+                            <div style="font-size:14px;opacity: 0.7;">越低，回答越稳定精准。越高，越丰富发散。</div>
                         </div>
-                        <div class="button" onclick="window.cefBridge.openAbout()" style="margin-bottom: 10px;">
+                        <div class="button" onclick="window.cefBridge.openAbout()" style="margin: 20px 0;">
                             检查更新
                         </div>
                     </div>
@@ -324,6 +303,20 @@ if($('#settings-modal').hasClass('show')){
                     </div>
                 </div>
 
+                <!-- 服务商 -->
+                <div class="settings-section" id="providers-settings">
+                    <div class="settings-header">
+                        <h2 class="settings-title">服务商</h2>
+                        <span style="font-size:14px;opacity: 0.7;">添加或管理 API 服务商。请详细了解后再修改。</span>
+                        <div style="display: flex;">
+                            <a class="lnkbtn" onclick="window.cefBridge.openGuide()">查看帮助</a>
+                        </div>
+                    </div>
+                    <div id="providers-list" class="settings-form" style="padding-bottom:80px;">
+                        <!-- 由 settings.js 动态渲染 -->
+                    </div>
+                </div>
+
                 <!-- 管理模型 -->
                 <div class="settings-section" id="models-settings">
                     <div class="settings-header">
@@ -338,10 +331,11 @@ if($('#settings-modal').hasClass('show')){
                             <a class="lnkbtn" onclick="window.cefBridge.openGuide()">查看帮助</a>
                         </div>
                     </div>
-                    <div class="models-grid" id="model-list">
-                        <!-- 这里会动态填充模型卡片 -->
+                    <div id="model-list" style="display:flex;flex-direction:column;gap:10px;">
+                        <!-- 这里会动态填充模型列表（由 settings.js 渲染） -->
                     </div>
                 </div>
+
                 <!-- 工具 -->
                 <div class="settings-section" id="tools-settings">
                     <div class="settings-header">
@@ -369,13 +363,13 @@ if($('#settings-modal').hasClass('show')){
                 <h2>打开 Devtools？</h2>
                 <p>你确定要打开 Devtools 吗？这常用于开发和调试。</p>
                 <div style="margin-top: 20px; display: flex; gap: 10px;">
-                    <button style="min-width: 50%;" class="button primary" onclick="if(window.cefBridge) {
+                    <button style="min-width: 50%" class="button primary" onclick="if(window.cefBridge) {
                             localStorage.setItem('opendevtools','true');
                             window.cefBridge.openDevTools();
                             $('#devtools-confirm').fadeOut(100);
                             $('#app').addClass('show');
                         }">打开 Devtools</button>
-                    <button class="button" style="width: 50%;" onclick="$('#devtools-confirm').fadeOut(100);
+                    <button class="button" style="width: 50%" onclick="$('#devtools-confirm').fadeOut(100);
                         $('#app').addClass('show');">取消</button>
                 </div>
             </div>

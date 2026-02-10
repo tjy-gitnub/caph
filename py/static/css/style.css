@@ -1,59 +1,4 @@
-@import url(colors.css);
-
-@font-face {
-    font-family: 'Segoe Fluent Icons';
-    src: url('../lib/fonts/Segoe\ Fluent\ Icons.ttf') format('truetype');
-}
-
-html {
-    margin: 0;
-    padding: 0;
-}
-
-/* 禁止主页面滚动 */
-html,
-body {
-    overflow: hidden;
-    height: 100vh;
-    width: 100vw;
-}
-
-/* 基础样式 */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    user-select: none;
-}
-
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
-        'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    letter-spacing: 0.2px;
-    line-height: 1.6;
-    color: var(--text-color);
-    display: flex;
-    flex-direction: column;
-}
-
-.a.textlike {
-    color: inherit;
-    text-decoration: underline 0.2em #888;
-    transition: 80ms;
-    cursor: pointer;
-    margin: 1px;
-
-    &:hover {
-        color: var(--primary-color);
-        text-decoration-color: var(--primary-color);
-    }
-
-    &:active {
-        opacity: 0.6;
-    }
-}
+@import url(base.css);
 
 #header-cover {
     background-color: var(--input);
@@ -112,10 +57,7 @@ body {
     display: flex;
     flex-direction: column;
     min-width: 0;
-    /* background-color: var(--card-bg); */
-    /* border-radius: 10px; */
     overflow: hidden;
-    /* border: var(--border-color) solid 1px; */
 }
 
 .chat-container {
@@ -127,108 +69,6 @@ body {
     display: flex;
     flex-direction: column;
     scroll-behavior: initial;
-}
-
-
-.list {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    scroll-behavior: smooth;
-}
-
-.list .a {
-    display: block;
-    padding: 4px 10px;
-    /* margin-bottom: 4px; */
-    /* border-radius: 6px; */
-    color: var(--text-color);
-    text-decoration: none;
-    transition: background-color 80ms;
-    /* border-top: 1px solid #aaaaaa70; */
-    font-size: 14px;
-    cursor: default;
-    border-radius: 7px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    overflow: hidden;
-}
-
-.list .a:hover {
-    background-color: var(--list);
-}
-
-.list .a:active {
-    opacity: 0.6;
-}
-
-/* 模型选中状态 */
-.list .a.active {
-    background-color: var(--primary-color);
-    color: var(--inp);
-    opacity: 1;
-}
-
-.list .a>i {
-    font-size: 16px;
-    opacity: 0.8;
-}
-
-.list .a>.detail {
-    font-size: 12px;
-    opacity: 0.7;
-    margin-left: auto;
-}
-
-.hr {
-    display: block;
-    height: 1px;
-    width: 100%;
-    background-color: var(--border-color);
-    margin: 6px 0;
-}
-
-
-loading {
-    display: flex;
-    height: 100%;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-loading>svg>circle:last-child {
-    stroke: var(--primary-color);
-    fill: none;
-    stroke-width: 2px;
-    stroke-linecap: round;
-    animation: spin-infinite 2s linear 0s infinite normal none running;
-    transform-origin: 50% 50%;
-    transition: all .2s ease-in-out 0s;
-}
-
-loading>svg {
-    background-color: #00000000;
-    border-radius: 50%;
-}
-
-@keyframes spin-infinite {
-    0% {
-        stroke-dasharray: .01px, 43.97px;
-        transform: rotate(0deg)
-    }
-
-    50% {
-        stroke-dasharray: 21.99px, 21.99px;
-        transform: rotate(450deg)
-    }
-
-    to {
-        stroke-dasharray: .01px, 43.97px;
-        transform: rotate(3turn)
-    }
 }
 
 
@@ -254,19 +94,14 @@ loading>svg {
 }
 
 
-
 /* 主内容区 */
 #chat-header {
     height: 35px;
-    /* border: 1px solid var(--border-color); */
     display: flex;
     gap: 10px;
     justify-content: space-between;
     align-items: center;
-    /* border-radius: 8px; */
     padding: 0 5px 5px 5px;
-    /* flex-shrink: 0; */
-    /* transition: 100ms; */
 
     >div {
         display: flex;
@@ -278,7 +113,6 @@ loading>svg {
 
 #current-model {
     color: var(--text-color);
-    /* background-color: var(--message-bot-bg); */
     padding: 3px 10px;
     border-radius: 7px;
     text-align: center;
@@ -387,13 +221,6 @@ loading>svg {
         padding: 5px 16px;
         background: var(--message-bot-bg);
     }
-
-    /* >.message-toolbar,
-    >.edit-tools{
-        right: unset;
-        left: 0;
-    } */
-
 }
 
 .message.assistant.tool-calls>.message-toolbar>.delete-button {
@@ -408,7 +235,7 @@ loading>svg {
 }
 
 .multiple-tool-calls>.actions,
-.message.tool>.actions{
+.message.tool>.actions {
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -424,14 +251,6 @@ loading>svg {
     align-self: start;
     max-width: 100%;
     margin-bottom: 0;
-    /* background-color: var(--message-bot-bg);
-    padding: 12px 15px;
-    border-radius: 8px;
-    border: 2px solid var(--primary-color); */
-
-    /* &:hover{
-        background-color: var(--list);
-    } */
 
     margin: 0 10px 8px 16px;
 
@@ -482,10 +301,8 @@ loading>svg {
 .message-content {
     padding: 10px 16px;
     border-radius: 12px;
-    /* box-shadow: var(--shadow); */
     line-height: 1.5;
     font-size: 16px;
-    /* line-height: 1.6; */
     letter-spacing: 0.2px;
     word-break: break-word;
 }
@@ -526,7 +343,7 @@ loading>svg {
     initial-value: 0deg;
 }
 
-@keyframes tile-border-tile-border-rotate {
+@keyframes tile-border-rotate {
     0% {
         --angle: 0deg;
     }
@@ -537,7 +354,6 @@ loading>svg {
 }
 
 #input-container::after {
-
     --c1: #1cd9ff;
     --c2: #8a84ff;
     --c3: #f260ff;
@@ -552,7 +368,7 @@ loading>svg {
 
     --angle: 0deg;
 
-    animation-name: tile-border-tile-border-rotate;
+    animation-name: tile-border-rotate;
     animation-iteration-count: infinite;
     animation-duration: 2s;
     animation-timing-function: linear;
@@ -576,18 +392,16 @@ loading>svg {
     opacity: 1;
 }
 
-
 #input-container:has(.textarea:focus) {
     background-color: var(--inp);
-    /* outline: 2px solid var(--primary-color); */
 }
 
 #input-container>.textarea {
-    /* background: var(--input) !important; */
     display: block;
     background: transparent;
     border: none;
-    height: 63px;
+    height: 68px;
+    min-height: 65px;
     padding: 3px 14px;
 }
 
@@ -599,16 +413,17 @@ loading>svg {
     gap: 5px;
 }
 
-#input-container>.attachment>div{
+#input-container>.attachment>div {
     gap: 3px;
     padding: 5px 8px;
-    >span{
+
+    >span {
         display: inline;
         line-height: 1;
     }
 }
 
-#input-container>.attachment>.a{
+#input-container>.attachment>.a {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -616,21 +431,13 @@ loading>svg {
     border-radius: 5px;
 }
 
-#input-container>.attachment>.a:hover{
+#input-container>.attachment>.a:hover {
     background-color: var(--hover-color);
 }
-#input-container>.attachment>.a:active{
+
+#input-container>.attachment>.a:active {
     opacity: 0.6;
 }
-
-/* #input-container>.textarea:hover {
-    background-color: var(--input);
-    filter: invert(0.03);
-} 
-
-#input-container>.textarea:focus {
-    filter: none;
-}*/
 
 #input-container>.input-buttons {
     display: flex;
@@ -649,222 +456,20 @@ loading>svg {
 
 main.main-content>.model-dropdown {
     position: static;
-    /* display: block; */
-    /* background: transparent; */
-    /* border: none; */
     box-shadow: none;
     margin-left: 10px;
     transform: none !important;
-    /* max-height: unset; */
-}
-
-
-.form-field input[type="text"],
-.form-field input[type="number"],
-.form-field select {
-    width: 100%;
-    padding: 7px 10px;
-    border: 2px solid var(--border-color);
-    border-radius: 8px;
-    background-color: var(--card-bg);
-    color: var(--text-color);
-    font-size: 14px;
-    transition: 80ms;
-    outline: none !important;
-    font-family: inherit;
-    letter-spacing: 0.3px;
-}
-
-.form-field input[type="text"]:hover,
-.form-field input[type="number"]:hover,
-.form-field select:hover {
-    background-color: var(--message-bot-bg);
-}
-
-.form-field select {
-    width: unset;
-    position: relative;
-    display: block;
-}
-
-.form-field select option {
-    background: var(--inp);
-    color: var(--text-color);
-    font-size: 14px;
-    padding: 5px 10px;
-}
-
-.textarea {
-    color: var(--text-color);
-    font-size: 14px;
-    resize: vertical;
-    padding: 12px;
-    overflow-y: auto;
-    resize: none;
-    transition: 100ms;
-    outline: none !important;
-    font-family: inherit;
-    line-height: 1.6;
-    letter-spacing: 0.3px;
-
-}
-
-.textarea-like {
-    width: 100%;
-    min-height: 80px;
-    padding: 12px;
-    border: 2px solid var(--border-color);
-    border-radius: 8px;
-    background: var(--card-bg);
-    color: var(--text-color);
-    margin-bottom: 12px;
-    overflow-y: auto;
-    transition: 100ms;
-    font-family: inherit;
-    line-height: 1.6;
-}
-
-
-.textarea-like:hover {
-    background-color: var(--message-bot-bg);
-}
-
-.form-field input[type="text"]:focus,
-.form-field input[type="number"]:focus,
-.form-field select:focus,
-.textarea:focus {
-    background-color: var(--inp);
-    border-color: var(--primary-color);
-}
-
-/* 按钮样式 */
-.button {
-    padding: 8px 16px;
-    border: none;
-    border-radius: 6px;
-    font-size: 14px;
-    cursor: default;
-    transition: 80ms;
-    background: var(--hover-color);
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-}
-
-.button>.detail {
-    font-size: 12px;
-    opacity: 0.7;
-    margin-left: 2px;
-    margin-bottom: -2px;
-}
-
-.button.primary {
-    background: var(--primary-color);
-    color: var(--inp);
-    border: none;
-}
-
-
-.button[disabled],
-.toolbar-button[disabled] {
-    pointer-events: none;
-    opacity: 0.6;
-}
-
-.button:hover {
-    background: var(--list);
-}
-
-.button.primary:hover {
-    background: var(--primary-hover);
-}
-
-.button.red {
-    background: var(--red);
-    color: #fff;
-    border: none;
-}
-
-.button.red:hover {
-    background: var(--bright-red);
-}
-
-.button:active {
-    opacity: 0.7;
-}
-
-.button i {
-    margin-right: 4px;
-}
-
-
-.lnkbtn {
-    padding: 4px 10px;
-    margin: 2px 3px;
-    border: none;
-    background: none;
-    color: var(--primary-color);
-    border-radius: 7px;
-    cursor: default;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 14px;
-    transition: 50ms;
-}
-
-.lnkbtn:hover {
-    background: var(--list);
-    /* color: var(--primary-color); */
-}
-
-.lnkbtn:active {
-    opacity: 0.6;
-}
-
-/* ..lnkbtn i {
-    font-size: 14px;
-} */
-
-
-.small-btn {
-    padding: 4px;
-    background: none;
-    color: var(--text-color);
-    opacity: 0.7;
-    cursor: default;
-    border-radius: 4px;
-    transition: 80ms;
-    border: 1px solid transparent;
-
-    &:hover {
-        opacity: 1;
-        background: var(--message-bot-bg);
-        border-color: var(--border-color);
-    }
-
-    &:active {
-        opacity: 0.6;
-    }
 }
 
 /* 编辑框样式 */
 .edit-container {
     margin-top: 12px;
-    /* width: 80%; */
-    /* 与消息最大宽度一致 */
     width: 100%;
-    /* margin: 0 auto; */
-    /* 居中显示 */
 }
 
 .edit-tools {
     opacity: 1 !important;
     transition: none;
-    /* .message-toolbar,.edit-tools */
 }
 
 .edit-tools .toolbar-button.save {
@@ -907,53 +512,17 @@ main.main-content>.model-dropdown {
     vertical-align: middle;
 }
 
-/* 滚动条样式 */
-::-webkit-scrollbar {
-    width: 9px;
-    height: 9px;
-    display: block;
-}
-
-::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 5px;
-    border: 2.5px solid transparent;
-    background-clip: content-box;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    border-color: var(--border-color);
-}
-
-::-webkit-scrollbar-thumb:active {
-    background: var(--text-color);
-    border-color: var(--text-color);
-}
-
 /* 聊天消息工具栏样式和操作按钮样式 */
 .message-toolbar,
 .edit-tools {
-    /* position: absolute; */
-    /* bottom: -45px; */
     right: 0;
     margin-top: 8px;
     margin-left: auto;
     width: fit-content;
-    /* background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 5px; */
-    /* bottom: -35px; */
-
     display: flex;
     gap: 4px;
     opacity: 0;
     transition: 100ms;
-    /* box-shadow: var(--shadow); */
 }
 
 .message:hover .message-toolbar,
@@ -1015,7 +584,7 @@ main.main-content>.model-dropdown {
     border: 1px solid var(--border-color);
 }
 
-/* 新增：会话列表项样式 */
+/* 会话列表项样式 */
 #conversations-list .conv-item {
     align-items: center;
     justify-content: space-between;
@@ -1078,12 +647,10 @@ main.main-content>.model-dropdown {
 }
 
 
-/* current-model 下拉样式 */
+/* 下拉菜单样式 */
 .model-dropdown {
     position: absolute;
     z-index: 60;
-    /* background: var(--card-bg);
-    backdrop-filter: blur(10px); */
     background: var(--bg-color);
     border: 1px solid var(--border-color);
     border-radius: 12px;
@@ -1095,10 +662,9 @@ main.main-content>.model-dropdown {
     overflow-x: hidden;
     text-overflow: ellipsis;
     width: calc(100% - 20px);
-    /* left: 10px; */
     left: 5px;
 
-    transform-origin: top left;
+    transform-origin: top center;
     animation: fadeDown 200ms cubic-bezier(0, 0.3, 0.2, 1) forwards;
 
     .a.active {
@@ -1153,11 +719,11 @@ main.main-content>.model-dropdown {
 }
 
 #open-settings:active>.sfi {
-    transform: rotate(-120deg);
+    transform: rotate(-60deg);
     transition: transform 200ms cubic-bezier(0.5, 0.83, 0.83, 1);
 }
 
-/* 关于 */
+/* 模态框 */
 .modal-overlay {
     position: fixed;
     inset: 0;
@@ -1196,35 +762,7 @@ main.main-content>.model-dropdown {
     line-height: 1.45;
 }
 
-/* Segoe Fluent Icon  */
-.sfi {
-    font-family: 'Segoe Fluent Icons', 'Segoe MDL2 Assets', Arial, sans-serif;
-    font-size: 1em;
-    display: inline-block;
-    vertical-align: middle;
-    transition: transform 200ms 150ms ease;
-
-    &&& {
-        user-select: none !important;
-    }
-}
-
-
-/* think块切换动画 */
-.sfi.down {
-    transform: rotate(180deg);
-}
-
-
 .tool-card {
-    /* background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 10px;
-    margin: 8px 0;
-    max-width: 80%;
-    box-shadow: var(--shadow); */
-
     font-size: 0.9em;
     padding: 4px 10px;
     border-radius: 8px;
@@ -1248,4 +786,14 @@ main.main-content>.model-dropdown {
     margin-top: 8px;
     display: flex;
     gap: 8px;
+}
+
+#scroll-to-bottom{
+    position: absolute;
+    bottom: 10px;
+    right: 20px;
+    padding: 0;
+    height: 30px;
+    width: 30px;
+    border-radius: 50%;
 }

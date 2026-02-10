@@ -4,7 +4,7 @@ class ConversationManager {
 		this.conversations = [];
 		this.activeId = null;
 		this.load();
-		// render sidebar on init if DOM ready
+
 		$(document).ready(() => {
 			this.renderSidebar();
 		});
@@ -50,7 +50,7 @@ class ConversationManager {
 		};
 	}
 
-	// 新增：生成唯一名称
+	// 生成唯一名称
 	_generateUniqueName(base) {
 		const exists = new Set(this.conversations.map((c) => c.name));
 		if (!exists.has(base)) return base;
@@ -59,20 +59,16 @@ class ConversationManager {
 		return `${base} (${i})`;
 	}
 
-	// 新增：检查名字是否存在（排除指定 id）
+	// 检查名字是否存在（排除指定 id）
 	_isNameExists(name, excludeId = null) {
 		return this.conversations.some((c) => c.name === name && c.id !== excludeId);
-	}
-
-	getAll() {
-		return this.conversations;
 	}
 
 	getActive() {
 		return this.conversations.find((c) => c.id === this.activeId) || null;
 	}
 
-	// 修改：创建会话时确保名称唯一
+	// 创建会话时确保名称唯一
 	createConversation(name) {
 		const conv = this._createDefaultConversation();
 		if (name) {
@@ -113,7 +109,7 @@ class ConversationManager {
 	setActive(id) {
 		if (this.activeId === id) return;
 		this.activeId = id;
-		this.save(); // persist active selection
+		this.save(); // 保存 activeId 的变化
 		this.triggerChange();
 	}
 
@@ -122,7 +118,6 @@ class ConversationManager {
 		if (!c) return;
 		Object.assign(c, meta);
 		this.save();
-		// this.triggerChange();
 	}
 
 	updateActiveMessages(messages) {
@@ -165,10 +160,18 @@ class ConversationManager {
 			model: obj.model || null,
 			createdAt: new Date().toISOString(),
 		};
+
+		// 兼容：如果导入文件的 model 为模型 id（字符串），尝试转换为 pid
+		if (conv.model && typeof conv.model === "string") {
+			const pid = configUtils.findGithubModelById(conv.model);
+			if (typeof pid !== "undefined" && pid !== null) {
+				conv.model = pid;
+			}
+		}
+
 		this.conversations.unshift(conv);
 		this.activeId = conv.id;
 		this.save();
-		// this.triggerChange();
 		return conv;
 	}
 
@@ -296,4 +299,5 @@ class ConversationManager {
 }
 
 // 在文件加载完成后实例化单例
-window.conversationManager = new ConversationManager();
+// window.conversationManager = new ConversationManager();
+convManager = new ConversationManager();

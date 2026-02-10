@@ -1,15 +1,18 @@
+'use strict';
+
 const dom = new Dom();
 
-chatHistory = []; // 当前对话消息历史
-isProcessing = false; // 消息处理状态标志
-pausingForToolCall = false; // 是否在等待工具调用用户确认
-editingMessageId = null; // 正在编辑的消息ID
-abortController = null; // 用于取消请求的 AbortController
+var chatHistory = []; // 当前对话消息历史
+var isProcessing = false; // 消息处理状态标志
+var pausingForToolCall = false; // 是否在等待工具调用用户确认
+var editingMessageId = null; // 正在编辑的消息ID
+var abortController = null; // 用于取消请求的 AbortController
 
-window.settingManager = new Settings();
-
+var settingManager = new Settings();
 // 从 localStorage 恢复或初始化设置
-settings_data = settingManager.getSettings();
+settingManager.initSettings();
+
+var settings_data = settingManager.getSettings();
 
 // 颜色主题设置
 if (settings_data.autoTheme) {
@@ -25,68 +28,31 @@ if (settings_data.autoTheme) {
   document.documentElement.setAttribute("data-theme", settings_data.theme);
 }
 
-// 对话管理器（全局实例）
-convManager = window.conversationManager;
 
-// 确定当前使用的模型（优先级：当前会话 > 本地存储 > 设置 > 默认）
-const activeConv = convManager.getActive();
-defaultModel =
-  activeConv?.model ||
-  localStorage.getItem("defaultModel") ||
-  DEFAULT_MODEL;
-currentModel =
-  activeConv?.model || localStorage.getItem("defaultModel") || defaultModel;
-
-// 处理 GitHub Token
-if (GITHUB_TOKEN !== "__your_gh_token__") {
-  ghtoken = GITHUB_TOKEN;
-  $("#token-error").hide();
-} else {
-  ghtoken = localStorage.getItem("ghtoken");
-  if (!ghtoken) {
-    console.error("未设置 GITHUB_TOKEN。请前往设置页面输入你的 GitHub Token。");
-    document.addEventListener("DOMContentLoaded", () => {
-      $("#token-error").show();
-    });
-  }
+// 确定当前使用的模型（以 pid 为单位）
+const defaultModelPid = settings_data.modelList[0].pid ?? 1;
+var currentModelPid = convManager.getActive()?.model ?? defaultModelPid;
+if(typeof currentModelPid == 'string'){
+  currentModelPid=configUtils.findGithubModelById(currentModelPid).pid;
 }
-contentProcessor = new ContentProcessor(); // 内容处理器（Markdown、代码高亮等）
+
+var contentProcessor = new ContentProcessor(); // 内容处理器（Markdown、代码高亮等）
 
 document.addEventListener("DOMContentLoaded", () => {
   // 初始化
   dom.setupEventListeners();
-  // loadHistory();
   dom.setupAutoResize();
+  dom.setupScrollToBottom();
 
   contentProcessor.initKaTeX(); // 初始化数学公式渲染
   mermaid.initialize({
     startOnLoad: false,
     theme: "default",
   });
-
-
 });
 
 /**
- * 添加消息到历史并渲染
- * @param {string} content 消息内容
- * @param {boolean} isUser 是否为用户消息
- * @returns {object} 消息对象
- */
-function addMessage(content, isUser) {
-  const message = createMessage(content, isUser);
-  chatHistory.push(message);
-  // 立即渲染消息
-  dom.renderMessageElement(message).then(($messageElement) => {
-    $("#chat-messages").append($messageElement);
-    dom.scrollToBottom();
-  });
-  saveHistory();
-  return message;
-}
-
-/**
- * 创建消息对象
+ * 创建消息数据对象（保存 model 为 pid）
  * @param {string} content 消息内容
  * @param {boolean} isUser 是否为用户消息
  */
@@ -97,12 +63,12 @@ function createMessage(content, isUser) {
     isUser,
     role: isUser ? "user" : "assistant", // 记录具体的assistant角色
     timestamp: new Date().toISOString(),
-    model: !isUser ? currentModel : null, // 记录使用的模型
+    model: !isUser ? currentModelPid : null, // 记录模型 pid
   };
 }
 
 /**
- * 处理发送消息
+ * 处理用户发送的消息（按钮或回车）
  */
 async function handleSendMessage() {
   if (abortController) {
@@ -131,18 +97,27 @@ async function handleSendMessage() {
 
   try {
     // 添加用户消息
-    const userMessage = addMessage(content, true);
+    const message = createMessage(content, true);
+    chatHistory.push(message);
+    // 立即渲染消息
+    dom.renderMessageElement(message).then(($messageElement) => {
+      $("#chat-messages").append($messageElement);
+      dom.scrollToBottom(true);
+    });
+    saveHistory();
 
-    // 发送到服务器
-    await sendToServer(userMessage);
+    // 发送到服务器，传入最新的 chatHistory（最后一条为用户消息）
+    await sendToServer();
   } catch (error) {
     console.error("发送消息失败:", error);
     dom.showError("发送消息失败：" + error.message);
-  } finally {
-    dom.scrollToBottom();
+    dom.scrollToBottom(true);
   }
 }
 
+/**
+ * 显示临时的系统消息
+ */
 function showCommandResponse(message) {
   const $message = $(`
                 <div class="message system">
@@ -150,7 +125,7 @@ function showCommandResponse(message) {
                 </div>
             `);
   $("#chat-messages").append($message);
-  dom.scrollToBottom();
+  dom.scrollToBottom(true);
 };
 
 /**
@@ -208,7 +183,7 @@ async function updateStreamingMessage(content) {
       id: Date.now() + Math.random().toString(36).substr(2, 9),
       isUser: false,
       role: 'assistant',
-      model: currentModel,
+      model: currentModelPid,
       timestamp: new Date().toISOString(),
     };
 
@@ -276,8 +251,7 @@ function finalizeMessage(content, replaceMessageId) {
         saveHistory();
       });
       // 更新发送者名称
-      const modelName =
-        settings_data.models[chatHistory[idx].model] || chatHistory[idx].model || "AI";
+      const modelName = configUtils.findModelByPid(chatHistory[idx].model).name || "AI";
       $streamingMessage.find(".message-sender").text(modelName);
       $streamingMessage.attr("data-id", replaceMessageId);
     } else {
@@ -304,25 +278,26 @@ function handleCreateNewMessage(content, $streamingMessage) {
     contentProcessor.highlightCode($content);
     dom.bindMessageToolbarEvents($streamingMessage, message);
     contentProcessor.bindCodeEvents($streamingMessage);
-    $streamingMessage.find(".message-sender").text(settings_data.models[message.model] || message.model || "AI");
+    $streamingMessage.find(".message-sender").text(configUtils.findModelByPid(message.model).name || "AI");
     $streamingMessage.attr("data-id", message.id);
     saveHistory();
   });
 }
 
 /**
- * 选择模型
- * @param {string} id 模型ID
+ * 选择模型（现在以 pid 识别）
+ * @param {number|string} pid 模型 pid 或可转换为数字的值
  */
-async function selectModel(id) {
-  // 更新 UI 显示
-  const modelName = settings_data.models[id] || id;
+async function selectModel(pid) {
+  const pidNum = Number(pid);
+  const modelObj = configUtils.findModelByPid(pidNum);
+  const modelName = modelObj.name || modelObj.id;
   $("#current-model").html(`<span class="name">${modelName}</span>`);
 
-  // 保存到当前会话的元数据
-  currentModel = id;
-  localStorage.setItem("defaultModel", id);
-  convManager.updateActiveMetadata({ model: id });
+  currentModelPid = pidNum;
+  localStorage.setItem("defaultModelPid", String(pidNum));
+  // 保存到当前会话的元数据（使用 pid）
+  convManager.updateActiveMetadata({ model: currentModelPid });
   dom.onConversationChanged();
 }
 
@@ -343,7 +318,6 @@ function deleteMessage(id) {
   if (index !== -1) {
     if (chatHistory[index].role == 'assistant') {
       chatHistory.splice(index, 1);
-      // $(`[data-id="${id}"]`).remove();
       index--;
       while (index > 0 && (chatHistory[index].role === 'tool' || chatHistory[index].role === 'assistant')) {
         chatHistory.splice(index, 1);
@@ -400,7 +374,11 @@ async function sendToServer() {
     const enableTool = localStorage.getItem("enableTool") === "true";
     const systemPrompt = settings_data.simplePrompt + (enableTool ? '\n\n' + settings_data.toolCallPrompt + '\n\n默认的工作目录在用户的 Documents 文件夹。越出当前工作目录的操作都会被阻止，如果你要操作其它位置，必须先用change_directory工具切换工作目录。' : '');
     const temperature = settings_data.temperature ?? 0.7;
-    const modelToUse = active?.model || currentModel;
+    // modelToUse 为模型的 id（api 识别用）——根据 pid 找到 id
+    const modelPidToUse = active?.model || currentModelPid;
+    const modelObj = configUtils.findModelByPid(modelPidToUse);
+    const modelIdForApi = modelObj.id;
+    const provider = configUtils.getProviderByKey(modelObj.provider);
 
     const messages = [
       { role: "system", content: systemPrompt },
@@ -408,7 +386,6 @@ async function sendToServer() {
         if (m.isUser) return { role: "user", content: m.content };
         if (m.role === "system") return { role: "system", content: m.content };
         if (m.role === "tool") return { role: "tool", name: m.tool, content: m.content, tool_call_id: m.tool_call_id };
-        // assistant (可能包含tool_calls)
         const obj = { role: "assistant", content: m.content || "" };
         if (Array.isArray(m.tool_calls) && m.tool_calls.length) obj.tool_calls = m.tool_calls;
         return obj;
@@ -417,39 +394,44 @@ async function sendToServer() {
 
     console.log("Sending request with history:", messages);
 
-    const headers = new Headers();
-    headers.append("Content-Type", "application/json");
-    if (ghtoken) headers.append("Authorization", `Bearer ${ghtoken}`);
-    else {
-      throw new Error("未设置 GitHub Token。请前往设置页面输入你的 GitHub Token。");
-    }
+    // 构建请求体（按 provider/request_type 组织）
+    let req_body = {
+      messages,
+      model: modelIdForApi || modelPidToUse,
+      temperature,
+      stream: settings_data.stream ?? true,
+    };
 
     const enabledTools = av_tools.filter(t => {
       return !settings_data.tools_disabled[t.function.name];
     });
-    let req_body = {
-      messages,
-      model: modelToUse,
-      temperature,
-      stream: settings_data.stream ?? true,
-    };
     if (enableTool && enabledTools.length > 0) {
       req_body.tools = enabledTools;
     }
+
+    // 使用 configUtils 构造请求目标（url/init）
+    const { url, init } = configUtils.buildRequestForProvider(provider, req_body);
+
     abortController = new AbortController();
-    const response = await fetch(`${ENDPOINT}/chat/completions`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(req_body),
-      signal: abortController.signal,
-    });
+    // 将 abort signal 合并到 init（保留 headers/body/method）
+    const fetchInit = Object.assign({}, init, { signal: abortController.signal });
+
+    const response = await fetch(url, fetchInit);
 
     if (!response.ok) {
-      if (response.status === 429) throw new Error("请求达到速率上限。");
-      const errBody = await response.json().catch(() => ({}));
-      throw new Error(errBody.error?.message || `请求失败(${response.status})`);
+      const message = await response.json().catch(() => null);
+      let text = '';
+      if (message && message.error && message.error.message) {
+        text = message.error.message;
+      } else {
+        text = await response.text().catch(() => '');
+      }
+      if (response.status === 429) throw new Error("请求达到速率上限。\n" + text);
+      if (response.status === 401) throw new Error("请检查服务商对应的密钥是否设置、是否正确。\n" + text);
+      throw new Error(text.length ? text : `请求失败(${response.status})`);
     }
 
+    // 以下流处理保持原逻辑（SSE 解析 / tool calls 等），不变
     const reader = response.body.getReader();
     let streamingMessageAdded = false;
 
@@ -544,8 +526,8 @@ async function sendToServer() {
                 if (typeof result !== "string") {
                   result = JSON.stringify(result, null, 2);
                 }
-                if (result.length > 3000) {
-                  result = result.substring(0, 3000) + "......[结果过长，已截断]";
+                if (result.length > MAX_TOOL_RESULT_LENGTH) {
+                  result = result.substring(0, MAX_TOOL_RESULT_LENGTH) + "......[结果过长，已截断]";
                 }
                 console.log("Tool name:", toolCallBuffer[toolIndex].name, "Args:", parsedArgs, "Result:", result);
 
@@ -561,8 +543,7 @@ async function sendToServer() {
                 tool: toolCallBuffer[toolIndex].name,
                 tool_call_id: assistantToolMessage.tool_calls[toolIndex].id,
                 timestamp: new Date().toISOString(),
-                description: toolCallBuffer[toolIndex].description,
-                // 在响应结束后生成
+                description: toolCallBuffer[toolIndex].description, // 在流式响应结束后生成
               };
               if (cwdChanged) {
                 toolMessage.cwd = cwd_now;
@@ -572,7 +553,7 @@ async function sendToServer() {
 
               dom.renderMessageElement(toolMessage).then(($tm) => {
                 $card.after($tm);
-                dom.updateToolCardResultWithDone($card);
+                dom.updateToolCallResultAndRemove($card);
                 dom.scrollToBottom();
               });
               finishedToolCalls[toolIndex] = true;
@@ -603,7 +584,7 @@ async function sendToServer() {
 
               dom.renderMessageElement(toolMessage).then(($tm) => {
                 $card.after($tm);
-                dom.updateToolCardResultWithDone($card);
+                dom.updateToolCallResultAndRemove($card);
                 dom.scrollToBottom();
               });
               if (finishedToolCalls.indexOf(false) === -1) {
@@ -659,7 +640,7 @@ async function sendToServer() {
                 },
               ],
               timestamp: new Date().toISOString(),
-              model: currentModel,
+              model: currentModelPid,
             };
 
             chatHistory.push(assistantToolMessage);
@@ -692,14 +673,9 @@ async function sendToServer() {
             toolCardEl[toolIndex] = dom.createToolCard(toolCallBuffer[toolIndex]);
           } else {
             dom.updateToolCardPreview(toolCardEl[toolIndex], toolCallBuffer[toolIndex]);
-            // if (assistantToolMessage) {
-            //   assistantToolMessage.tool_calls[toolIndex].function.arguments = toolCallBuffer[toolIndex].arguments;
-            //   saveHistory();
-            // }
           }
 
         }
-
 
         // 普通文本内容
         const text = delta.content || "";
@@ -719,7 +695,7 @@ async function sendToServer() {
         console.log("Stream ended");
         if (toolCallBuffer.length > 0) {
           console.log("Pausing for", toolCallBuffer.length, "tool calls");
-          dom.pauseForToolCall(toolCardEl);
+          dom.pauseForToolCall();
           // 生成描述
           for (let i = 0; i < toolCallBuffer.length; i++) {
             const describer = tool_describers[toolCallBuffer[i].name];

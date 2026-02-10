@@ -133,4 +133,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 STATICFILES_DIRS = (
     join_path(BASE_DIR, 'static'),
-) 
+)
+
+# 完全禁用缓存
+CACHES = {
+   'default': {
+       'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+   }
+}

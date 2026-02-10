@@ -1,11 +1,11 @@
 class Settings {
-  constructor() {
-    // 开启调试输出以便定位交换/抖动问题，发布时可设为 false
-    this.debug = true;
-  }
+  constructor() { }
 
-  getSettings(){
-    let ret={
+  getSettings=()=>JSON.parse(localStorage.getItem("chatSettings"));
+
+  initSettings() {
+    // 初始化 + 清理遗留数据
+    let ret = {
       simplePrompt:
         typeof DEFAULT_SETTINGS.simplePrompt
           ? DEFAULT_SETTINGS.simplePrompt
@@ -30,32 +30,83 @@ class Settings {
         typeof DEFAULT_SETTINGS.theme
           ? DEFAULT_SETTINGS.theme
           : null,
-      models:
-        typeof DEFAULT_SETTINGS.models
-          ? DEFAULT_SETTINGS.models
-          : AVAILABLE_MODELS,
+      modelList: Array.isArray(DEFAULT_SETTINGS.modelList) ? DEFAULT_SETTINGS.modelList.slice() : [],
+      providers: Array.isArray(DEFAULT_SETTINGS.providers) ? DEFAULT_SETTINGS.providers.slice() : [],
       tools_disabled: {},
     };
 
-    const savedSettings = JSON.parse(
-      localStorage.getItem("chatSettings"));
-    for (const key in ret) {
-      if (savedSettings && key in savedSettings) {
-        ret[key] = savedSettings[key];
+    const savedSettings = JSON.parse(localStorage.getItem("chatSettings") || "null");
+
+    // 合并已保存的字段（兼容旧格式）
+    if (savedSettings) {
+      if (Array.isArray(savedSettings.modelList)) {
+        ret.modelList = savedSettings.modelList.slice();
+      } else if (savedSettings.models && typeof savedSettings.models === 'object') {
+        // 兼容旧格式，将 mapping 转为 modelList（provider 默认为 github）
+        ret.modelList = Object.entries(savedSettings.models).map(([id, name], idx) => ({
+          id,
+          name,
+          provider: 'github',
+          pid: idx + 1
+        }));
+        ret.models=undefined;
       }
+      if (Array.isArray(savedSettings.providers)) {
+        ret.providers = savedSettings.providers.slice();
+      } else if (savedSettings.provider) {
+        // noop
+      }
+      if (savedSettings.tools_disabled) ret.tools_disabled = savedSettings.tools_disabled;
+      if (savedSettings.simplePrompt) ret.simplePrompt = savedSettings.simplePrompt;
+      if (savedSettings.toolCallPrompt) ret.toolCallPrompt = savedSettings.toolCallPrompt;
+      if (typeof savedSettings.temperature === 'number') ret.temperature = savedSettings.temperature;
+      if (typeof savedSettings.stream !== 'undefined') ret.stream = savedSettings.stream;
+      if (typeof savedSettings.autoTheme !== 'undefined') ret.autoTheme = savedSettings.autoTheme;
+      if (typeof savedSettings.theme !== 'undefined') ret.theme = savedSettings.theme;
     }
-    return ret;
+
+    // 迁移旧的单独 ghtoken（若存在），写入 providers.github.api_key 并删除原 localStorage
+    const legacyToken = localStorage.getItem("ghtoken");
+    if (legacyToken) {
+      // 若 providers 中已有 github，填充 api_key；否则插入一个默认 github provider
+      let found = false;
+      if (Array.isArray(ret.providers)) {
+        for (let p of ret.providers) {
+          if (p.key === "github") {
+            p.api_key = legacyToken;
+            found = true;
+            break;
+          }
+        }
+      } else {
+        ret.providers = [];
+      }
+      if (!found) {
+        ret.providers.unshift({
+          name: "GitHub Models",
+          key: "github",
+          api_endpoint: "https://models.github.ai/inference",
+          request_type: "openai_compatible",
+          api_key: legacyToken
+        });
+      }
+      localStorage.removeItem("ghtoken");
+    }
+
+    // 确保每个 model 有 pid
+    for (let i = 0; i < ret.modelList.length; i++) {
+      if (!ret.modelList[i].pid) ret.modelList[i].pid = i + 1;
+    }
+    
+    if (localStorage.getItem("defaultModel")) {
+      localStorage.removeItem("defaultModel");
+    }
+    
+    localStorage.setItem("chatSettings",JSON.stringify(ret));
   }
 
   // 设置相关方法
   openSettings() {
-    // 填充当前设置
-    $("#setting-token").val(ghtoken || "");
-    if (!ghtoken || ghtoken === "") {
-      $("#setting-token").addClass("error");
-    } else {
-      $("#setting-token").removeClass("error");
-    }
     $("#setting-simple-prompt").val(settings_data.simplePrompt || "");
     $('#setting-toolcall-prompt').val(settings_data.toolCallPrompt || "");
     $("#setting-temperature")
@@ -63,14 +114,15 @@ class Settings {
       .trigger("input");
     $("#setting-stream").prop("checked", settings_data.stream !== false);
 
-    // 填充模型列表
+    // 渲染模型与服务商列表
     this.renderModelSettings();
-
+    this.renderProviderSettings();
     // 填充工具列表
     this.renderToolSettings();
 
     $('#app').removeClass("show");
-    $("#settings-modal").addClass("show");
+    $("#settings-modal").show().addClass("show");
+    setTimeout($('#app').hide, 200);
 
     $('#settings-sidebar>.list>.a').removeClass('active');
     $('#settings-sidebar>.list>.section-general').addClass('active');
@@ -80,7 +132,8 @@ class Settings {
 
   closeSettings() {
     $("#settings-modal").removeClass("show");
-    $('#app').addClass("show");
+    $('#app').show().addClass("show");
+    setTimeout($('#settings-modal').hide, 200);
   }
 
   async saveSettings() {
@@ -95,20 +148,11 @@ class Settings {
         $("#setting-theme").val() === "auto" ? null : $("#setting-theme").val(),
     };
 
-    // 保存 token
-    const newToken = $("#setting-token").val().trim();
-    if (newToken !== ghtoken) {
-      ghtoken = newToken;
-      localStorage.setItem("ghtoken", newToken);
-      if (newToken) {
-        $("#token-error").hide();
-      } else {
-        $("#token-error").show();
-      }
-    }
+    // 保存模型列表（从 UI 获取为数组）
+    newSettings.modelList = this.getModelListFromUI();
 
-    // 保存模型列表
-    newSettings.models = this.getModelListFromUI();
+    // 保存 providers（从 UI）
+    newSettings.providers = this.getProvidersFromUI();
 
     // 更新设置
     settings_data = newSettings;
@@ -127,10 +171,293 @@ class Settings {
       document.documentElement.setAttribute("data-theme", newSettings.theme);
     }
 
-    // 重新加载模型列表
-    dom.loadModels();
+    // 如果当前 pid 仍然有效则保持，否则切换到第一个 model 的 pid
+    if (typeof currentModelPid !== "undefined" && configUtils.findModelByPid(currentModelPid)) {
+      selectModel(currentModelPid);
+    } else {
+      const firstPid = newSettings.modelList[0].pid;
+      if (firstPid) selectModel(firstPid);
+    }
 
     this.closeSettings();
+  }
+
+  // 渲染服务商设置区域（请求类型改为 select）
+  renderProviderSettings() {
+    const $pv = $("#providers-list").empty();
+    (settings_data.providers || []).forEach((p, idx) => {
+      const $item = $(`
+        <div class="provider-item" data-index="${idx}" style="padding:10px;border-bottom:1px solid var(--border-color);">
+          <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;">
+            <strong class="provider-name">${p.name}</strong>
+            <!--button class="delete-provider small-btn" title="删除"><span class="sfi">&#xE711;</span></button-->
+          </div>
+          <div style="margin-top:8px;" class="form-field">
+            <div><label>显示名称</label><input class="provider-name-input" type="text" value="${p.name}"/></div>
+            <!--保留以存储数据-->
+            <div style="display:none"><label>Key</label><input class="provider-key-input" type="text" value="${p.key}"/></div>
+            <div><label>API 节点 (completion 完整路径)</label><input class="provider-endpoint-input" type="text" value="${p.api_endpoint}"/></div>
+            <div><label>请求类型</label>
+              <select class="provider-type-input">
+                <option value="openai_compatible"${p.request_type==='openai_compatible'?' selected':''}>OpenAI 兼容</option>
+              </select>
+            </div>
+            <div><label>密钥</label><input class="provider-apikey-input" type="text" value="${p.api_key || ''}"/></div>
+          </div>
+        </div>
+      `);
+      // $item.find('.delete-provider').click((e)=>{ e.stopPropagation(); $item.remove(); });
+      $pv.append($item);
+    });
+    $pv.append($(`<div style="margin-top:8px;padding:10px;"><button id="add-provider" class="button">添加服务商</button></div>`));
+    $pv.find('#add-provider').click(()=> {
+      const idx = $('#providers-list .provider-item').length;
+      const $item = $(`
+        <div class="provider-item" data-index="${idx}" style="padding:10px;border-bottom:1px solid var(--border-color);">
+          <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;">
+            <strong class="provider-name">新服务商</strong>
+            <button class="delete-provider small-btn" title="删除"><span class="sfi">&#xE711;</span></button>
+          </div>
+          <div style="margin-top:8px;" class="form-field">
+            <div><label>显示名称</label><input class="provider-name-input" type="text" value="新服务商"/></div>
+            
+            <div><label>键（首次填写后不可更改）</label><input class="provider-key-input" type="text" value=""/></div>
+            <div><label>API 节点 (completion 完整路径)</label><input class="provider-endpoint-input" type="text" value=""/></div>
+            <div><label>请求类型</label>
+              <select class="provider-type-input">
+                <option value="openai_compatible">OpenAI 兼容</option>
+              </select>
+            </div>
+            <div><label>密钥</label><input class="provider-apikey-input" type="text" value=""/></div>
+          </div>
+        </div>
+      `);
+      $item.find('.delete-provider').click((e)=>{ e.stopPropagation(); $item.remove(); });
+      $('#providers-list').append($item);
+    });
+  }
+
+  // 设置面板的模型列表管理
+  renderModelSettings() {
+    const $modelList = $("#model-list").empty();
+    const providers = settings_data.providers || [];
+
+    var max_id=1;
+    settings_data.modelList.forEach((m, idx) => {
+      const provOptions = providers.map(p => `<option value="${p.key}" ${p.key===m.provider?'selected':''}>${p.name}</option>`).join('');
+      const $item = $(`<div class="model-list-item" data-index="${idx}">
+          <div class="model-summary">
+            <span class="drag-handle sfi" title="拖动排序">&#xE700;</span>
+            <span class="model-name-display">${m.name || ''}</span>
+            <button class="toggle-details toolbar-button" title="展开"><span class="sfi">&#xE70D;</span></button>
+          </div>
+          <div class="model-details form-field" style="display:none; margin-top:8px;">
+            <div><label>显示名称</label><input class="model-name" type="text" value="${m.name || ''}"/></div>
+            <div><label>API 标识 (id)</label><input class="model-id" type="text" value="${m.id || ''}"/></div>
+            <div><label>服务商</label><select class="model-provider">${provOptions}</select></div>
+            <div style="display:none"><label>pid</label><input class="model-pid" disabled value="${m.pid}" type="number"/></div>
+            <div style="margin-top:10px;float:right;">
+              <button class="delete-model red button"><span class="sfi">&#xE711;</span>删除</button>
+            </div>
+          </div>
+        </div>`);
+      $modelList.append($item);
+      if(m.pid>max_id)max_id=m.pid;
+    });
+
+    // 添加“添加新模型”按钮
+    $modelList.append($(`<div class="add-model-btn" id="add-model-btn"><span class="sfi">&#xE710;</span> 添加新模型</div>`));
+    $modelList.find('#add-model-btn').click(()=> {
+      const idx = $('#model-list .model-list-item').length;
+      const provOptions = (settings_data.providers||[]).map(p=>`<option value="${p.key}">${p.name}</option>`).join('');
+      const $item = $(`<div class="model-list-item" data-index="${idx}">
+          <div class="model-summary">
+            <span class="drag-handle sfi" title="拖动排序">&#xE700;</span>
+            <span class="model-name-display">新模型</span>
+            <button class="toggle-details toolbar-button" title="展开"><span class="sfi">&#xE70D;</span></button>
+          </div>
+          <div class="model-details form-field" style="display:block; margin-top:8px;">
+            <div><label>显示名称</label><input class="model-name" type="text" value="新模型"/></div>
+            <div><label>API 标识 (id)</label><input class="model-id" type="text" value=""/></div>
+            <div><label>服务商</label><select class="model-provider">${provOptions}</select></div>
+            <div style="display:none"><label>pid</label><input class="model-pid" disabled value="${++max_id}" type="number"/></div>
+            <div style="margin-top:10px;float:right;">
+              <button class="delete-model red button"><span class="sfi">&#xE711;</span>删除</button>
+            </div>
+          </div>
+        </div>`);
+      // 插入到 按钮 之前
+      $modelList.find('#add-model-btn').before($item);
+
+      // 重新初始化拖拽绑定
+      this.initModelDragSorting();
+    });
+
+    // 使用事件委托绑定详情切换与删除，避免在 initModelDragSorting 克隆元素时丢失绑定
+    $modelList.off('click', '.toggle-details').on('click', '.toggle-details', function(e){
+      e.stopPropagation();
+      const $item = $(this).closest('.model-list-item');
+      const $det = $item.find('.model-details');
+      const showing = $det.is(':visible');
+      $(this).find('.sfi').toggleClass('down',!showing);
+      $det.toggle();
+    });
+    $modelList.off('click', '.delete-model').on('click', '.delete-model', function(e){
+      e.stopPropagation();
+      $(this).closest('.model-list-item').remove();
+    });
+
+    // 初始化拖拽
+    this.initModelDragSorting();
+  }
+
+  // 新增：初始化模型列表的拖拽排序（仅通过把手拖拽）
+  initModelDragSorting() {
+    const container = document.getElementById("model-list");
+    if (!container) return;
+
+    // 移除旧的 handler
+    if (container._dragHandler) {
+      container.removeEventListener('pointerdown', container._dragHandler);
+      container._dragHandler = null;
+    }
+
+    // 通过委托，仅响应把手的 pointerdown
+    const handler = (e) => {
+      const handle = e.target.closest && e.target.closest('.drag-handle');
+      if (!handle) return;
+      const card = handle.closest('.model-list-item');
+      this._onModelPointerDown(e, card);
+    };
+    container._dragHandler = handler;
+    container.addEventListener('pointerdown', handler);
+  }
+
+  _onModelPointerDown(e, card) {
+    // 仅左键
+    if (e.button !== 0) return;
+    // 防止在交互控件上触发
+    if (e.target.closest("button, input, select, textarea")) return;
+
+    e.preventDefault();
+    card.setPointerCapture && card.setPointerCapture(e.pointerId);
+
+    const container = document.getElementById("model-list");
+    const rect = card.getBoundingClientRect();
+    const placeholder = document.createElement("div");
+    placeholder.className = "model-placeholder";
+    placeholder.style.height = rect.height + "px";
+    card.parentNode.insertBefore(placeholder, card.nextSibling);
+
+    // 记录偏移（相对 card 的鼠标位置）
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+
+    // 固定样式
+    card.classList.add("dragging");
+    card.style.position = "fixed";
+    card.style.left = rect.left + "px";
+    card.style.top = rect.top + "px";
+    card.style.width = rect.width + "px";
+    card.style.zIndex = 10000;
+    card.style.pointerEvents = "none";
+
+    this._modelDragState = {
+      card, placeholder, container, offsetX, offsetY,
+      moveHandler: (ev) => this._onModelPointerMove(ev),
+      upHandler: (ev) => this._onModelPointerUp(ev),
+    };
+
+    document.addEventListener("pointermove", this._modelDragState.moveHandler);
+    document.addEventListener("pointerup", this._modelDragState.upHandler);
+  }
+
+  _onModelPointerMove(e) {
+    const st = this._modelDragState;
+    if (!st) return;
+    e.preventDefault();
+    const { card, placeholder, container, offsetX, offsetY } = st;
+    const left = e.clientX - offsetX;
+    const top = e.clientY - offsetY;
+    card.style.left = left + "px";
+    card.style.top = top + "px";
+
+    // 计算插入位置：根据中心点与其他元素比较
+    const centerY = top + card.getBoundingClientRect().height / 2;
+    const children = Array.from(container.querySelectorAll(".model-list-item")).filter(n => n !== card);
+    let insertBeforeEl = null;
+    for (const ch of children) {
+      const r = ch.getBoundingClientRect();
+      const chCenter = r.top + r.height / 2;
+      if (centerY < chCenter) {
+        insertBeforeEl = ch;
+        break;
+      }
+    }
+    if (insertBeforeEl) {
+      container.insertBefore(placeholder, insertBeforeEl);
+    } else {
+      const addBtn = container.querySelector("#add-model-btn");
+      if (addBtn) container.insertBefore(placeholder, addBtn);
+      else container.appendChild(placeholder);
+    }
+  }
+
+  _onModelPointerUp(e) {
+    const st = this._modelDragState;
+    if (!st) return;
+    const { card, placeholder, container, moveHandler, upHandler } = st;
+    document.removeEventListener("pointermove", moveHandler);
+    document.removeEventListener("pointerup", upHandler);
+    try { card.releasePointerCapture && card.releasePointerCapture(e.pointerId); } catch (err) {}
+
+    // 插回 DOM 到 placeholder 位置
+    if (placeholder && placeholder.parentNode) {
+      placeholder.parentNode.insertBefore(card, placeholder);
+      placeholder.parentNode.removeChild(placeholder);
+    }
+    // 清理样式
+    card.classList.remove("dragging");
+    card.style.position = "";
+    card.style.left = "";
+    card.style.top = "";
+    card.style.width = "";
+    card.style.zIndex = "";
+    card.style.pointerEvents = "";
+
+    this._modelDragState = null;
+
+  }
+
+  // 从 UI 收集 modelList（数组） — 改为按 DOM 顺序生成连续 pid
+  getModelListFromUI() {
+    const arr = [];
+    $("#model-list .model-list-item").each(function(){
+      const name = $(this).find('.model-name').val() || $(this).find('.model-name-display').text() || '';
+      const id = $(this).find('.model-id').val().trim();
+      const provider = $(this).find('.model-provider').val() || 'github';
+      const pidVal = parseInt($(this).find('.model-pid').val());
+      if (id) {
+        arr.push({ id, name, provider, pid: pidVal });
+      }
+    });
+    return arr;
+  }
+
+  // 从 UI 获取 providers 列表
+  getProvidersFromUI() {
+    const arr = [];
+    $("#providers-list .provider-item").each(function(){
+      const name = $(this).find('.provider-name-input').val().trim();
+      const key = $(this).find('.provider-key-input').val().trim();
+      const api_endpoint = $(this).find('.provider-endpoint-input').val().trim();
+      const request_type = $(this).find('.provider-type-input').val().trim();
+      const api_key = $(this).find('.provider-apikey-input').val().trim();
+      if (key) {
+        arr.push({ name, key, api_endpoint, request_type, api_key });
+      }
+    });
+    return arr;
   }
 
   renderToolSettings() {
@@ -153,406 +480,4 @@ class Settings {
     const isEnabled = $(`#a-vtools-list .tool-enable[data-tool-name="${toolName}"]`).prop("checked");
     settings_data.tools_disabled[toolName] = !isEnabled;
   }
-
-  // 设置面板的模型列表管理
-  renderModelSettings() {
-    const $modelList = $("#model-list").empty();
-    Object.entries(settings_data.models).forEach(([id, name]) => {
-      $modelList.append(this.createModelCard(id, name));
-    });
-    $modelList.append($(`
-                    <div class="add-model-btn" id="add-model-btn" onclick="settingManager.newModel();">
-                        <span class="sfi">&#xE710;</span>
-                        <span>添加新模型</span>
-                    </div>`))
-
-    // 初始化拖拽排序（每次重新渲染时绑定）
-    this.initDragSorting();
-  }
-
-  newModel(){
-    $(this.createModelCard("", "")).insertBefore("#add-model-btn");
-    // 重新绑定拖拽事件到新卡片
-    this.initDragSorting();
-  }
-
-  createModelCard(id, name) {
-    return $(`
-            <div class="model-card">
-                <div class="model-field">
-                    <label>模型ID</label>
-                    <input type="text" class="model-id" value="${id}" onpointerdown="event.stopPropagation();">
-                </div>
-                <div class="model-field">
-                    <label>显示名称</label>
-                    <input type="text" class="model-name" value="${name}" onpointerdown="event.stopPropagation();">
-                </div>
-                <div class="model-actions">
-                    <button class="small-btn delete-model">
-                        <span class="sfi">&#xE711;</span>
-                    </button>
-                </div>
-            </div>
-        `);
-  }
-
-  getModelListFromUI() {
-    const models = {};
-    $(".model-card").each(function () {
-      const id = $(this).find(".model-id").val().trim();
-      const name = $(this).find(".model-name").val().trim();
-      if (id && name) {
-        models[id] = name;
-      }
-    });
-    return models;
-  }
-
-  /* ===== 拖拽排序相关实现（基于 pointer 事件，不使用 HTML5 drag） ===== */
-  initDragSorting() {
-    // 清除旧的事件，重新绑定到每个 card
-    const container = document.getElementById("model-list");
-    if (!container) return;
-    // 使用原生 DOM 便于 pointer capture
-    const cards = Array.from(container.querySelectorAll(".model-card"));
-    cards.forEach(card => {
-      // remove previous handlers by cloning (simple way)
-      const newCard = card.cloneNode(true);
-      card.parentNode.replaceChild(newCard, card);
-    });
-
-    // 绑定事件
-    Array.from(container.querySelectorAll(".model-card")).forEach(card => {
-      card.style.touchAction = "none";
-      card.addEventListener("pointerdown", (e) => this._onPointerDown(e, card));
-      // delete 按钮绑定（保持原有功能）
-      const del = card.querySelector(".delete-model");
-      if (del) {
-        del.addEventListener("click", (ev) => {
-          ev.stopPropagation();
-          $(card).remove();
-        });
-      }
-    });
-  }
-
-  _onPointerDown(e, card) {
-    // 不在卡片可交互按钮上启动拖拽（例如删除按钮）
-    if (e.target.closest(".delete-model") || e.button !== 0) return;
-
-    e.preventDefault();
-    card.setPointerCapture && card.setPointerCapture(e.pointerId);
-
-    const container = document.getElementById("model-list");
-    const rect = card.getBoundingClientRect();
-
-    // 创建占位符 ghost
-    const ghost = document.createElement("div");
-    ghost.className = "model-ghost";
-    ghost.style.width = rect.width + "px";
-    ghost.style.height = rect.height + "px";
-
-    // 插入占位符到被拖拽卡片的位置（放在 card 之前），保证占位正确
-    card.parentNode.insertBefore(ghost, card);
-
-    // 记录单元格基础尺寸（用于网格对齐）
-    const cellWidth = rect.width;
-    const cellHeight = rect.height;
-
-    // 设置拖动卡片为 fixed，使其脱离文档流并随指针移动
-    card.classList.add("dragging");
-    card.style.position = "fixed";
-    card.style.left = rect.left + "px";
-    card.style.top = rect.top + "px";
-    card.style.width = rect.width + "px";
-    card.style.zIndex = 10000;
-    card.style.pointerEvents = "none";
-
-    // 状态（保存 cell 大小）
-    this._dragState = {
-      card,
-      ghost,
-      container,
-      offsetX: e.clientX - rect.left,
-      offsetY: e.clientY - rect.top,
-      pointerId: e.pointerId,
-      moveHandler: null,
-      upHandler: null,
-      cellWidth,
-      cellHeight,
-      lastInsertion: null // 新增：记录上一次插入索引，避免抖动
-    };
-
-    const moveHandler = (ev) => this._onPointerMove(ev);
-    const upHandler = (ev) => this._onPointerUp(ev);
-
-    this._dragState.moveHandler = moveHandler;
-    this._dragState.upHandler = upHandler;
-
-    document.addEventListener("pointermove", moveHandler);
-    document.addEventListener("pointerup", upHandler);
-  }
-
-  _onPointerMove(e) {
-    const st = this._dragState;
-    if (!st) return;
-    e.preventDefault();
-
-    const { card, ghost, container, offsetX, offsetY, cellWidth, cellHeight } = st;
-    // 更新卡片位置（fixed）
-    const left = e.clientX - offsetX;
-    const top = e.clientY - offsetY;
-    card.style.left = left + "px";
-    card.style.top = top + "px";
-
-    // 中心点
-    const centerX = left + cellWidth / 2;
-    const centerY = top + cellHeight / 2;
-
-    const containerRect = container.getBoundingClientRect();
-
-    // 获得参考元素（排除拖拽卡片、占位符和添加按钮）
-    const children = Array.from(container.children).filter(node =>
-      node !== card &&
-      !node.classList.contains('model-ghost') &&
-      !node.classList.contains('add-model-btn')
-    );
-
-    if (children.length === 0) {
-      if (ghost.parentNode !== container) container.appendChild(ghost);
-      return;
-    }
-
-    // 优先从 computed style 获取 gap（稳定），回退到测量法
-    let gapX = 20, gapY = 20;
-    let gapSource = "measured";
-    try {
-      const cs = window.getComputedStyle(container);
-      // 支持 gap, columnGap, rowGap（浏览器差异）
-      const rawGap = cs.getPropertyValue("gap") || cs.getPropertyValue("column-gap") || cs.getPropertyValue("columnGap");
-      const rawRowGap = cs.getPropertyValue("row-gap") || cs.getPropertyValue("rowGap");
-      const parsedGap = parseFloat(rawGap);
-      const parsedRowGap = parseFloat(rawRowGap);
-      if (!Number.isNaN(parsedGap)) {
-        gapX = parsedGap;
-        gapSource = "computed-gap";
-      }
-      if (!Number.isNaN(parsedRowGap)) {
-        gapY = parsedRowGap;
-      } else {
-        gapY = gapX;
-      }
-    } catch (err) {
-      // ignore, fallback to measured below
-      gapSource = "fallback";
-    }
-
-    // 若 computed style 未成功解析，则使用以前的近似测量（兼容）
-    if (gapSource === "measured" || gapSource === "fallback") {
-      if (children.length >= 2) {
-        const a = children[0].getBoundingClientRect();
-        // 找到同一行的下一个元素以计算 gapX（若第二个在下一行则找后续）
-        let b = children.find((c, idx) => {
-          if (idx === 0) return false;
-          const r = c.getBoundingClientRect();
-          return Math.abs(r.top - a.top) < (a.height / 2);
-        });
-        if (!b) b = children[1];
-        const br = b.getBoundingClientRect();
-        gapX = Math.max(0, br.left - a.left - a.width);
-      }
-      // 垂直 gap：找下一行元素
-      if (children.length >= 2) {
-        const firstTop = children[0].getBoundingClientRect().top;
-        const nextRow = children.find(c => Math.abs(c.getBoundingClientRect().top - firstTop) > 1);
-        if (nextRow) {
-          const a = children[0].getBoundingClientRect();
-          const b = nextRow.getBoundingClientRect();
-          gapY = Math.max(0, b.top - a.top - a.height);
-        }
-      }
-    }
-
-    const colWidth = cellWidth + gapX;
-    const rowHeight = cellHeight + gapY;
-    const availableWidth = containerRect.width;
-    const columns = Math.max(1, Math.floor((availableWidth + gapX) / colWidth));
-
-    const relX = centerX - containerRect.left;
-    const relY = centerY - containerRect.top;
-    let col = Math.floor(relX / colWidth);
-    let row = Math.floor(relY / rowHeight);
-    col = Math.max(0, Math.min(columns - 1, col));
-    if (row < 0) row = 0;
-    let insertionIndex = row * columns + col;
-    insertionIndex = Math.max(0, Math.min(children.length, insertionIndex));
-
-    // 迟滞：要求卡片中心足够进入目标格的“内边距区域”才切换，避免边界抖动
-    const cellLeft = containerRect.left + col * colWidth;
-    const cellTop = containerRect.top + row * rowHeight;
-    const padX = Math.min(colWidth * 0.25, 20); // 内边距
-    const padY = Math.min(rowHeight * 0.25, 20);
-    const insideX = centerX >= (cellLeft + padX) && centerX <= (cellLeft + colWidth - padX);
-    const insideY = centerY >= (cellTop + padY) && centerY <= (cellTop + rowHeight - padY);
-
-    if (!(insideX && insideY)) {
-      if (this.debug) console.debug("[drag] not inside target cell padding, skip update");
-      return;
-    }
-
-    // 只有当插入索引实际变化时继续（避免重复 DOM 操作）
-    if (st.lastInsertion === insertionIndex) {
-      return;
-    }
-
-    // 进行 FLIP 动画：记录受影响元素的 rect（所有 children + ghost），并保存内联样式以便恢复
-    const beforeRects = new Map();
-    const oldStyles = new Map();
-    const affectedBefore = Array.from(container.children).filter(n => n !== card && !n.classList.contains('add-model-btn'));
-    affectedBefore.forEach(el => {
-      beforeRects.set(el, el.getBoundingClientRect());
-      oldStyles.set(el, {
-        transition: el.style.transition || "",
-        transform: el.style.transform || ""
-      });
-    });
-
-    // 执行 DOM 插入（把 ghost 放到 children[insertionIndex] 前）
-    // 修正：如果 insertionIndex 在 children.length（即末尾），应在 add-model-btn 之前插入，避免放到添加按钮之后
-    const addBtn = container.querySelector('.add-model-btn');
-    if (insertionIndex >= children.length) {
-      if (addBtn) {
-        container.insertBefore(ghost, addBtn);
-      } else {
-        container.appendChild(ghost);
-      }
-    } else {
-      const ref = children[insertionIndex];
-      container.insertBefore(ghost, ref);
-    }
-
-    // 记录 after rects 与执行动画（排除 add-model-btn 和正在拖拽的 card）
-    const affectedAfter = Array.from(container.children).filter(n => n !== card && !n.classList.contains('add-model-btn'));
-    affectedAfter.forEach(el => {
-      const before = beforeRects.get(el) || null;
-      const after = el.getBoundingClientRect();
-      if (before) {
-        const dx = before.left - after.left;
-        const dy = before.top - after.top;
-        if (dx !== 0 || dy !== 0) {
-          // 保存并施加逆向位移与无过渡状态
-          const old = oldStyles.get(el) || { transition: el.style.transition || "", transform: el.style.transform || "" };
-          el.style.transition = "none";
-          el.style.transform = `translate(${dx}px, ${dy}px)`;
-          // 强制回流
-          el.getBoundingClientRect();
-          // 清除 transform，恢复原内联 transition（以触发 CSS 中定义的 transition）
-          requestAnimationFrame(() => {
-            el.style.transition = old.transition;
-            el.style.transform = old.transform;
-          });
-        }
-      }
-    });
-
-    // 更新 lastInsertion
-    st.lastInsertion = insertionIndex;
-  }
-
-  _onPointerUp(e) {
-    const st = this._dragState;
-    if (!st) return;
-    e.preventDefault();
-
-    const { card, ghost, container, pointerId, moveHandler, upHandler } = st;
-
-    // 移除事件
-    document.removeEventListener("pointermove", moveHandler);
-    document.removeEventListener("pointerup", upHandler);
-    try {
-      card.releasePointerCapture && card.releasePointerCapture(pointerId);
-    } catch (err) { /* ignore */ }
-
-    // 如果 ghost 不存在，直接回退到旧行为
-    if (!ghost || !ghost.parentNode) {
-      // 将卡片直接插回（无动画）
-      if (card.parentNode) {
-        // ensure already in container
-      } else if (ghost && ghost.parentNode) {
-        ghost.parentNode.insertBefore(card, ghost);
-      }
-      // 清理样式
-      card.classList.remove("dragging");
-      card.style.position = "";
-      card.style.left = "";
-      card.style.top = "";
-      card.style.width = "";
-      card.style.zIndex = "";
-      card.style.pointerEvents = "";
-      if (ghost && ghost.parentNode) ghost.parentNode.removeChild(ghost);
-      this._dragState = null;
-      this.initDragSorting();
-      return;
-    }
-
-    // 目标位置（ghost 的位置）
-    const targetRect = ghost.getBoundingClientRect();
-    const currentRect = card.getBoundingClientRect();
-
-    // 先移除 dragging 类以恢复 CSS 中的 transition（.model-card 有 transform 过渡）
-    card.classList.remove("dragging");
-
-    // 计算移动距离（在 fixed 坐标系下）
-    const dx = targetRect.left - currentRect.left;
-    const dy = targetRect.top - currentRect.top;
-
-    // 保证 card 仍为 fixed（之前已设），并添加 transform 动画
-    // 设置过渡（以防某些样式被覆盖）
-    card.style.transition = "transform 150ms ease";
-    // 触发动画
-    requestAnimationFrame(() => {
-      card.style.transform = `translate(${dx}px, ${dy}px)`;
-    });
-
-    // 动画结束后将 card 插回 DOM（在 ghost 前），清理样式并移除 ghost
-    const onTransitionEnd = (ev) => {
-      if (ev.propertyName && ev.propertyName !== "transform") return;
-      card.removeEventListener("transitionend", onTransitionEnd);
-
-      // 插回 DOM（在占位 ghost 处）
-      if (ghost.parentNode) {
-        ghost.parentNode.insertBefore(card, ghost);
-      }
-
-      // 清理样式（恢复流内布局）
-      card.style.transition = "";
-      card.style.transform = "";
-      card.style.position = "";
-      card.style.left = "";
-      card.style.top = "";
-      card.style.width = "";
-      card.style.zIndex = "";
-      card.style.pointerEvents = "";
-
-      // 移除占位符
-      if (ghost.parentNode) ghost.parentNode.removeChild(ghost);
-
-      // 清理状态 & 重新绑定
-      this._dragState = null;
-      // small timeout 确保 DOM 插入结束再重新绑定
-      setTimeout(() => this.initDragSorting(), 0);
-    };
-
-    card.addEventListener("transitionend", onTransitionEnd);
-
-    // 保险：若浏览器不触發 transitionend（如超短距离），设置超时回退
-    setTimeout(() => {
-      // 若状态已被清理则无需重复
-      if (!this._dragState) return;
-      // 强制触发结束流程
-      card.dispatchEvent(new Event('transitionend'));
-    }, 300);
-  }
-
-  /* ===== 结束拖拽实现 ===== */
 }

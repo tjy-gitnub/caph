@@ -1,5 +1,15 @@
+var toBottom = true;
 class Dom {
   constructor() { }
+
+  setupScrollToBottom(){
+    $('#chat-messages').on('scroll',()=>{
+      const container = $("#chat-messages");
+      const scrollBottom = container[0].scrollHeight - container.scrollTop() - container.outerHeight();
+      toBottom = scrollBottom < 25;
+    });
+    $('#scroll-to-bottom').hide();
+  }
   // 消息编辑
   startEditing(messageId) {
     if (editingMessageId) return;
@@ -71,9 +81,19 @@ class Dom {
   }
 
   // 辅助方法
-  scrollToBottom() {
+  scrollToBottom(force=false) {
     const container = $("#chat-messages");
-    container.scrollTop(container[0].scrollHeight);
+    const $stb=$('#scroll-to-bottom');
+    if (toBottom || force) {
+      container.scrollTop(container[0].scrollHeight);
+      if($stb.is(':visible')){
+        $stb.hide();
+      }
+    } else {
+      if(!$stb.is(':visible')){
+        $stb.show();
+      }
+    }
   }
 
   setLoading(loading) {
@@ -87,24 +107,6 @@ class Dom {
       $('#send-button').toggleClass('red', loading)
         .html(loading ? '<span class="sfi">&#xEE95;</span> 停止' : '<span class="sfi">&#xE724;</span> 发送');
     $('#open-settings,#more-button,.message-toolbar>.toolbar-button,#open-about').prop('disabled', isProcessing || pausingForToolCall);
-    // $("#send-button").prop("disabled", loading);
-  }
-
-  // 加载模型列表
-  loadModels() {
-    const $selector = $("#model-selector");
-    $selector.empty();
-
-    Object.entries(settings_data.models).forEach(([id, name]) => {
-      const $model = $("<div>")
-        .addClass("a")
-        .attr("data-model-id", id)
-        .text(name)
-        .click(() => selectModel(id));
-
-      $selector.append($model);
-    });
-    selectModel(currentModel);
   }
 
   // 当会话切换或元数据变化时，更新 chatManager 的状态并重新加载历史
@@ -126,12 +128,10 @@ class Dom {
       $("#chat-header").removeClass("greeting");
       $('#send-button,#export-conversation').removeAttr('disabled');
     }
-    // 更新当前模型和局部设置显示
-    currentModel = active.model || defaultModel;
-    // update UI for current-model
-    const modelName =
-      settings_data.models[currentModel] || currentModel || "AI";
-    $("#current-model").html(`<span class="name">${modelName}</span>`);
+    // 更新当前模型和局部设置显示（使用 pid）
+    currentModelPid = convManager.getActive()?.model ?? defaultModelPid;
+    console.log(currentModelPid);
+    $("#current-model").html(`<span class="name">${configUtils.findModelByPid(currentModelPid).name}</span>`);
     // 加载消息
     chatHistory = Array.isArray(active.messages) ? active.messages.slice() : [];
     this.renderChatHistory();
@@ -174,7 +174,7 @@ class Dom {
         $(`<div id="greeting">
             <p class="title">开始与 AI 对话！</p>
             <p style="display:inline">正在与 <div class="model-name"><span class="name">
-                ${settings_data.models[currentModel] || currentModel
+                ${window.configUtils.findModelByPid(currentModelPid).name
           }</span></div>
                 交流</p>
             </div>`)
@@ -187,7 +187,7 @@ class Dom {
     } else {
       $("#chat-header").removeClass("greeting");
     }
-    this.scrollToBottom();
+    this.scrollToBottom(true);
   }
 
   // 历史消息渲染函数
@@ -214,7 +214,7 @@ class Dom {
           <div class="fold-header">
               <span class="fold-title">返回结果</span>
               <button class="fold-toggle" onclick="$(this.parentElement.parentElement).toggleClass('collapsed');$(this).find('.sfi').toggleClass('down');event.stopPropagation();">
-                  <span class="sfi chevron-down">&#xE70D;</span>
+                  <span class="sfi">&#xE70D;</span>
               </button>
           </div>
           <div class="fold-body">
@@ -226,9 +226,6 @@ class Dom {
       if (Array.isArray(message.tool_calls) && message.tool_calls.length) {
         const name = message.tool_calls.length > 1 ? message.tool_calls.length + '个' : message.tool_calls[0].function.name;
         processedContent += `<div class="label lb-toolcall"><span class=sfi>&#xE90F;</span><span>使用工具</span><span class=name>${name}</span></div>`;
-        // 不渲染数学公式或代码高亮（工具调用的内容由卡片展示）
-        // this.bindMessageToolbarEvents($message, message);
-        // return $message;
       }
       $content.html(processedContent);
     }
@@ -266,8 +263,6 @@ class Dom {
 
   // 更新消息工具栏事件绑定
   bindMessageToolbarEvents($message, message) {
-    // const isUser = message.isUser;
-
     $message.find(".copy-button").click(() => {
       navigator.clipboard.writeText(message.content);
     });
@@ -276,12 +271,10 @@ class Dom {
     $message.find(".edit-button").click(() => this.startEditing(message.id));
 
     // AI消息的重试按钮
-    // if (!message.isUser) {
     $message.find(".retry-button").click(() => retryMessage(message.id));
-    // }
   }
 
-  // 统一的消息模板
+  // 消息元素的模板
   createMessageElement(message) {
     let senderName;
     if (message.isUser) {
@@ -294,48 +287,42 @@ class Dom {
         </div>
         <div class="message-content">${message.content}</div>
       </div>`);
-    }else if(message.role==="system"){
+    } else if (message.role === "system") {
       return $(
-      `
+        `
             <div class="message system" data-id="${message.id}">
                 <div class="message-content"></div>
             </div>
         `
-    );
+      );
 
     } else {
-      senderName = settings_data.models[message.model] || message.model || "AI";
+      senderName = configUtils.findModelByPid(message.model).name || "AI";
     }
 
-    return $(
-      `
-            <div class="message ${message.role} ${(message.role == 'assistant' && message.tool_calls) ? 'tool-calls' : ''}" data-id="${message.id}">
-                <div class="message-header">
-                    <span class="message-sender">${senderName}</span>` +
-      `</div>
-                <div class="message-content"></div>
-               `+ (message.role != 'tool' ? `
-                <div class="message-toolbar">
-                    <button class="toolbar-button delete-button" title="删除">
-                        <span class="sfi">&#xE74D;</span>
-                    </button>
-                    <button class="toolbar-button copy-button" title="复制">
-                        <span class="sfi">&#xE8C8;</span>
-                    </button>
-                    <button class="toolbar-button retry-button" title="重试">
-                        <span class="sfi">&#xE895;</span>
-                    </button>
-                    <button class="toolbar-button edit-button" title="编辑">
-                        <span class="sfi">&#xE70F;</span>
-                    </button>
-                </div>`:
-        '')
-      + `
-            </div>
-        `
-    );
+    return $(`
+      <div class="message ${message.role} ${(message.role == 'assistant' && message.tool_calls) ? 'tool-calls' : ''}" data-id="${message.id}">
+          <div class="message-header">
+              <span class="message-sender">${senderName}</span>` + `
+          </div>
+          <div class="message-content"></div>
+          `+ (message.role != 'tool' ? `
+          <div class="message-toolbar">
+              <button class="toolbar-button delete-button" title="删除">
+                  <span class="sfi">&#xE74D;</span>
+              </button>
+              <button class="toolbar-button copy-button" title="复制">
+                  <span class="sfi">&#xE8C8;</span>
+              </button>
+              <button class="toolbar-button retry-button" title="重试">
+                  <span class="sfi">&#xE895;</span>
+              </button>
+              <button class="toolbar-button edit-button" title="编辑">
+                  <span class="sfi">&#xE70F;</span>
+              </button>
+          </div>` : '') + `
+      </div>`);
   }
-
 
   showModelDropdown(targetEl, input_container = false) {
     if ($(".model-dropdown").length) {
@@ -343,14 +330,17 @@ class Dom {
       return;
     }
     const $dropdown = $('<div class="model-dropdown list"></div>');
-    Object.entries(settings_data.models).forEach(([id, name]) => {
-      const $item = $(
-        `<div class="a ${currentModel === id ? "active" : ""
-        }" data-model-id="${id}">${name} <span class="id" style="opacity:.6;font-size:12px;margin-left:6px;">${id}</span></div>`
-      );
+    settings_data.modelList.forEach((m, idx) => {
+      const activeClass = (Number(currentModelPid) === Number(m.pid)) ? "active" : "";
+      const $item = $(`<div class="a ${activeClass}" data-model-id="${m.pid}">
+        ${m.name}
+        <span class="id" style="opacity:.6;font-size:12px;margin-left:6px;">
+          ${configUtils.getProviderByKey(m.provider)?.name}
+        </span>
+      </div>`);
       $item.on("click", (e) => {
         e.stopPropagation();
-        selectModel(id);
+        selectModel(m.pid);
         $dropdown.remove();
       });
       $dropdown.append($item);
@@ -394,7 +384,7 @@ class Dom {
       localStorage.setItem("enableTool", "true");
     }
 
-    const toolCallEnabled=localStorage.getItem("enableTool") === "true";
+    const toolCallEnabled = localStorage.getItem("enableTool") === "true";
     $("#toggle-tool").toggleClass("primary", toolCallEnabled);
     $('#input-container>.attachment>.cwd').toggle(toolCallEnabled);
 
@@ -405,19 +395,13 @@ class Dom {
       $('#input-container>.attachment>.cwd').toggle(enabled);
     });
 
-    // 加载模型列表
-    this.loadModels();
+    // 初始化选择模型（使用 pid）
+    selectModel(currentModelPid);
 
     // 设置按钮
     $("#open-settings").click(() => settingManager.openSettings());
     $("#close-settings").click(() => settingManager.closeSettings());
     $("#save-settings").click(() => settingManager.saveSettings());
-
-    // token 输入同步
-    $("#token").on("change", (e) => {
-      ghtoken = e.target.value;
-      localStorage.setItem("ghtoken", ghtoken);
-    });
 
     // 设置界面事件
     $(".settings-menu-item").click(function () {
@@ -426,7 +410,7 @@ class Dom {
 
       const section = $(this).data("section");
       $(".settings-section").removeClass("active");
-      $(`#${section}-settings`).addClass("active");
+      $(`#${section}-settings`).addClass("active").parent().scrollTop(0);
     });
 
     // 温度滑块
@@ -434,18 +418,13 @@ class Dom {
       $(".range-value").text(this.value);
     });
 
-    $("#model-list").on("click", ".delete-model", function () {
-      $(this).closest(".model-card").remove();
-    });
-
     // 实时更新温度值显示
     $("#setting-temperature").on("input", function () {
       $(this).closest(".range-slider").find(".range-value").text(this.value);
     });
 
-    // 点击当前模型显示模型下拉（从 settings.models 中读取）
+    // 点击当前模型显示模型下拉
     $("#current-model").on("click", (e) => {
-      // e.stopPropagation();
       this.showModelDropdown(e.currentTarget, true);
     });
 
@@ -480,7 +459,6 @@ class Dom {
     });
 
     $("#more-button").on("click", (e) => {
-      // e.stopPropagation();
       $("#sidebar").toggleClass("open");
     });
 
@@ -517,7 +495,6 @@ class Dom {
     const setHeight = () => {
       textarea.style.height = "auto";
       textarea.style.height = textarea.scrollHeight + 3 + "px";
-      // $("#chat-messages").css("padding-bottom", textarea.scrollHeight);
     };
 
     $("#message-input").on("input", setHeight);
@@ -536,7 +513,7 @@ class Dom {
     }
   }
 
-  // 新增：创建工具调用确认卡片（支持传入对象或旧签名）
+  // 创建工具调用确认卡片
   createToolCard(buffer) {
     const $card = $(`
       <div class="message tool waiting-confirmation">
@@ -571,6 +548,7 @@ class Dom {
     return $card;
   }
 
+  // 流式响应更新参数内容
   updateToolCardPreview($card, buffer) {
     $card.find(".tool-name").text(buffer.name);
     $card.find(".message-content").text(buffer.arguments);
@@ -588,9 +566,8 @@ class Dom {
     }
   }
 
-  updateToolCardResultWithDone($card) {
+  updateToolCallResultAndRemove($card) {
     if ($('.multiple-tool-calls').length) {
-      console.log('Updating multiple tool calls card');
       const $count = $('.multiple-tool-calls').find('.tool-count');
       if (parseInt($count.text()) > 1)
         $count.text(
@@ -603,7 +580,7 @@ class Dom {
     $card.remove();
   }
 
-  pauseForToolCall(cardlist) {
+  pauseForToolCall() {
     $(".tool-approve,.tool-cancel").prop("disabled", false);
     pausingForToolCall = true;
     $('#send-button,#toggle-tool').prop('disabled', true);
@@ -644,28 +621,29 @@ class Dom {
     });
 
     $("#chat-messages").append($total);
+    this.scrollToBottom();
   }
 
+  // 手动选择工作目录
   selectCwd() {
-    // 选择文件夹
-    window.cefBridge.selectFolder().then(cwd=>{
-      if(typeof cwd !== 'string' || !cwd.trim()) return;
+    window.cefBridge.selectFolder().then(cwd => {
+      if (typeof cwd !== 'string' || !cwd.trim()) return;
       const conv = convManager.getActive();
-      if(!conv) return;
+      if (!conv) return;
       const systemMessage = {
         id: Date.now() + Math.random().toString(36).substr(2, 9),
-        content: `工作目录已切换到 ${cwd}` ,
+        content: `工作目录已切换到 ${cwd}`,
         isUser: false,
         role: 'system',
         timestamp: new Date().toISOString(),
         cwd: cwd,
       }
       chatHistory.push(systemMessage);
-      let index=chatHistory.length-1;
-      while(index>0){
+      let index = chatHistory.length - 1;
+      while (index > 0) {
         index--;
-        if(chatHistory[index].role === 'system' && chatHistory[index].cwd){
-          chatHistory.splice(index,1);
+        if (chatHistory[index].role === 'system' && chatHistory[index].cwd) {
+          chatHistory.splice(index, 1);
         }
       }
       saveHistory();

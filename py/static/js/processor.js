@@ -66,7 +66,7 @@ class ContentProcessor {
                     <div class="fold-header">
                         <span class="fold-title">深度思考</span>
                         <button class="fold-toggle" onclick="$(this.parentElement.parentElement).toggleClass('collapsed');$(this).find('.sfi').toggleClass('down');event.stopPropagation();">
-                            <span class="sfi ${closed ? "chevron-down" : "chevron-up"}">${closed ? "&#xE70D;" : "&#xE70E;"}</span>
+                            <span class="sfi">${closed ? "&#xE70D;" : "&#xE70E;"}</span>
                         </button>
                     </div>
                     <div class="fold-body">${marked.parse(thinkContent)}</div>

@@ -10,10 +10,6 @@
 
 .message-content .label{
     border: 2px solid var(--primary-color);
-    /* background-color: ; */
-    /* background: ; */
-    /* opacity: 0.9; */
-    /* color: var(--red); */
     user-select: none;
     margin: 3px 0;
     font-size: 0.9em;
@@ -32,7 +28,6 @@
 
 .message-content .label.lb-stopped {
     border-color:var(--bright-red);
-    /* background-color: ; */
     background: #ff6d6d30;
 }
 
@@ -157,84 +152,6 @@
     font-weight: 600;
 }
 
-/* 思考 */
-
-.fold-title {
-    font-size: 14px;
-    color: var(--text-color);
-    user-select: none !important;
-    /* opacity: 0.7; */
-}
-
-.fold-toggle {
-    background: none;
-    border: none;
-    color: var(--text-color);
-    cursor: default;
-    padding: 0;
-    margin: 0;
-    margin-right: -5px;
-    border-radius: 5px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 27px;
-    width: 27px;
-    outline: none;
-}
-
-.fold-content {
-    margin: 8px 0;
-    padding: 4px 10px;
-    background: var(--card-bg);
-    border-radius: 6px;
-    /* border: 1px solid var(--border-color); */
-    transition: opacity 0.3s ease-out;
-}
-
-
-.fold-content:not(.collapsed) .fold-toggle:hover {
-    background-color: var(--hover-color);
-}
-
-.fold-content.collapsed {
-    cursor: default;
-    overflow: hidden;
-    height: 36px;
-    /* width: 100px; */
-    color: transparent;
-    position: relative;
-    width: 110px;
-    transition: 100ms;
-}
-
-.fold-content.collapsed .fold-body {
-    opacity: 0;
-    transition: 100ms;
-}
-
-
-.fold-content.collapsed:hover {
-    background-color: #aaaaaa40;
-}
-
-.fold-content.collapsed:active {
-    opacity: 0.6;
-}
-
-.fold-content.thinking {
-    outline: 2px solid var(--primary-color);
-}
-
-.fold-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-    padding-bottom: 8px;
-    /* border-bottom: 1px solid var(--border-color); */
-}
-
 
 /* 数学公式 */
 .katex-display {
@@ -330,9 +247,6 @@ pre[class*="language-"] {
 }
 
 .preview-toggle {
-    /* display: flex;
-    align-items: center;
-    gap: 4px; */
     padding: 4px 8px;
 }
 

@@ -1,0 +1,455 @@
+:root {
+    --primary-color: #005fba;
+    --primary-hover: #196ec0;
+    --bg-color: #f8f8f8;
+    --card-bg: #ffffffc0;
+    --input: #f5f5f5a0;
+    --inp: #fff;
+    --text-color: #000000;
+    --border-color: #00000015;
+    --hover-color: #dddddd90;
+    --message-user-bg: #b7e4ffc0;
+    --message-bot-bg: #ffffffcf;
+    --shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+    --list: #5555551a;
+    --red: #df4739;
+    --bright-red: #ff6659;
+    --titlebar-height: 40px;
+}
+
+[data-theme="dark"] {
+    --primary-color: #61ccff;
+    --primary-hover: #5abae9;
+    --bg-color: #2b2b2b;
+    --card-bg: #1b1b1bc0;
+    --input: #272727c0;
+    --inp: #111;
+    --text-color: #f5f5f5;
+    --border-color: #cccccc42;
+    --hover-color: #cecece30;
+    --message-user-bg: #3989bab0;
+    --message-bot-bg: #202020b0;
+    --shadow: 0 4px 15px rgba(0, 0, 0, 0.7);
+    --list: #d0d0d020;
+}
+
+
+/* Segoe Fluent Icon  */
+@font-face {
+    font-family: 'Segoe Fluent Icons';
+    src: url('../lib/fonts/Segoe\ Fluent\ Icons.ttf') format('truetype');
+}
+
+.sfi {
+    font-family: 'Segoe Fluent Icons', 'Segoe MDL2 Assets', Arial, sans-serif;
+    font-size: 1em;
+    display: inline-block;
+    vertical-align: middle;
+    transition: transform 200ms 150ms ease;
+
+    &&& {
+        user-select: none !important;
+    }
+}
+
+html {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* 基础样式 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+}
+
+body {
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+        'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: 0.2px;
+    line-height: 1.6;
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+}
+
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+    display: block;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 5px;
+    border: 2.5px solid transparent;
+    background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    border-color: var(--border-color);
+}
+
+::-webkit-scrollbar-thumb:active {
+    background: var(--text-color);
+    border-color: var(--text-color);
+}
+
+.a.textlike {
+    color: inherit;
+    text-decoration: underline 0.2em #888;
+    transition: 80ms;
+    cursor: pointer;
+    margin: 1px;
+
+    &:hover {
+        color: var(--primary-color);
+        text-decoration-color: var(--primary-color);
+    }
+
+    &:active {
+        opacity: 0.6;
+    }
+}
+
+/* 列表 */
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    scroll-behavior: smooth;
+}
+
+.list .a {
+    display: block;
+    padding: 4px 10px;
+    color: var(--text-color);
+    text-decoration: none;
+    transition: background-color 80ms;
+    /* border-top: 1px solid #aaaaaa70; */
+    font-size: 14px;
+    cursor: default;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    overflow: hidden;
+}
+
+.list .a:hover {
+    background-color: var(--list);
+}
+
+.list .a:active {
+    opacity: 0.6;
+}
+
+/* 选中状态 */
+.list .a.active {
+    background-color: var(--primary-color);
+    color: var(--inp);
+    opacity: 1;
+}
+
+.list .a>i {
+    font-size: 16px;
+    opacity: 0.8;
+}
+
+.list .a>.detail {
+    font-size: 12px;
+    opacity: 0.7;
+    margin-left: auto;
+}
+
+.hr {
+    display: block;
+    height: 1px;
+    width: 100%;
+    background-color: var(--border-color);
+    margin: 6px 0;
+}
+
+
+loading {
+    display: flex;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+loading>svg>circle:last-child {
+    stroke: var(--primary-color);
+    fill: none;
+    stroke-width: 2px;
+    stroke-linecap: round;
+    animation: spin-infinite 2s linear 0s infinite normal none running;
+    transform-origin: 50% 50%;
+    transition: all .2s ease-in-out 0s;
+}
+
+loading>svg {
+    background-color: #00000000;
+    border-radius: 50%;
+}
+
+@keyframes spin-infinite {
+    0% {
+        stroke-dasharray: .01px, 43.97px;
+        transform: rotate(0deg)
+    }
+
+    50% {
+        stroke-dasharray: 21.99px, 21.99px;
+        transform: rotate(450deg)
+    }
+
+    to {
+        stroke-dasharray: .01px, 43.97px;
+        transform: rotate(3turn)
+    }
+}
+
+.textarea {
+    color: var(--text-color);
+    font-size: 14px;
+    resize: vertical;
+    padding: 12px;
+    overflow-y: auto;
+    resize: none;
+    transition: 100ms;
+    outline: none !important;
+    font-family: inherit;
+    line-height: 1.6;
+    letter-spacing: 0.3px;
+
+}
+
+.textarea-like {
+    width: 100%;
+    min-height: 80px;
+    padding: 12px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--card-bg);
+    color: var(--text-color);
+    margin-bottom: 12px;
+    overflow-y: auto;
+    transition: 100ms;
+    font-family: inherit;
+    line-height: 1.6;
+}
+
+
+.textarea-like:hover {
+    background-color: var(--message-bot-bg);
+}
+
+
+/* 按钮样式 */
+.button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: default;
+    transition: 80ms;
+    background: var(--hover-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.button>.detail {
+    font-size: 12px;
+    opacity: 0.7;
+    margin-left: 2px;
+    margin-bottom: -2px;
+}
+
+.button.primary {
+    background: var(--primary-color);
+    color: var(--inp);
+    border: none;
+}
+
+
+.button[disabled],
+.toolbar-button[disabled] {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.button:hover {
+    background: var(--list);
+}
+
+.button.primary:hover {
+    background: var(--primary-hover);
+}
+
+.button.red {
+    background: var(--red);
+    color: #fff;
+    border: none;
+}
+
+.button.red:hover {
+    background: var(--bright-red);
+}
+
+.button:active {
+    opacity: 0.7;
+}
+
+.button i {
+    margin-right: 4px;
+}
+
+
+.lnkbtn {
+    padding: 4px 10px;
+    margin: 2px 3px;
+    border: none;
+    background: none;
+    color: var(--primary-color);
+    border-radius: 7px;
+    cursor: default;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+    transition: 50ms;
+}
+
+.lnkbtn:hover {
+    background: var(--list);
+    /* color: var(--primary-color); */
+}
+
+.lnkbtn:active {
+    opacity: 0.6;
+}
+
+.small-btn {
+    padding: 4px;
+    background: none;
+    color: var(--text-color);
+    opacity: 0.7;
+    cursor: default;
+    border-radius: 4px;
+    transition: 80ms;
+    border: 1px solid transparent;
+
+    &:hover {
+        opacity: 1;
+        background: var(--message-bot-bg);
+        border-color: var(--border-color);
+    }
+
+    &:active {
+        opacity: 0.6;
+    }
+}
+
+
+
+.fold-title {
+    font-size: 14px;
+    color: var(--text-color);
+    user-select: none !important;
+    /* opacity: 0.7; */
+}
+
+.fold-toggle {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    cursor: default;
+    padding: 0;
+    margin: 0;
+    margin-right: -5px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 27px;
+    width: 27px;
+    outline: none;
+}
+
+.fold-content {
+    margin: 8px 0;
+    padding: 4px 10px;
+    background: var(--card-bg);
+    border-radius: 6px;
+    /* border: 1px solid var(--border-color); */
+    transition: opacity 0.3s ease-out;
+}
+
+
+.fold-content:not(.collapsed) .fold-toggle:hover {
+    background-color: var(--hover-color);
+}
+
+/* 展开切换动画 */
+.sfi.down {
+    transform: rotate(180deg);
+}
+
+.fold-content.collapsed {
+    cursor: default;
+    overflow: hidden;
+    height: 36px;
+    color: transparent;
+    position: relative;
+    width: 110px;
+    transition: 100ms;
+}
+
+.fold-content.collapsed .fold-body {
+    opacity: 0;
+    transition: 100ms;
+}
+
+
+.fold-content.collapsed:hover {
+    background-color: #aaaaaa40;
+}
+
+.fold-content.collapsed:active {
+    opacity: 0.6;
+}
+
+.fold-content.thinking {
+    outline: 2px solid var(--primary-color);
+}
+
+.fold-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+}
