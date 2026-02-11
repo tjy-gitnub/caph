@@ -43,7 +43,7 @@ if(event.key=='F12' || event.key=='f12' || (event.ctrlKey && event.shiftKey && (
     opendevtools();
 }else if(event.key=='F5' || event.key=='f5' || (event.ctrlKey && (event.key=='R' || event.key=='r'))){
     location.reload(true);
-}else if(event.key=='F1' || event.key=='f1'){
+}else if(event.key=='F1' || event.key=='f1' || (event.ctrlKey && event.key=='h')){
     event.preventDefault();
     window.cefBridge.openGuide();
 }else if(event.ctrlKey && event.key.toLowerCase()=='arrowright'){
@@ -79,8 +79,8 @@ if($('#settings-modal').hasClass('show')){
     }else if(event.ctrlKey && (event.key=='s' || event.key=='S')){
         const payload = convManager.exportActiveConversation();
         if (!payload) {
-        this.showError('没有要导出的会话');
-        return;
+            this.showError('没有要导出的会话');
+            return;
         }
         const fname = (payload.name || 'conversation') + '.json';
         convManager.downloadObjectAsJson(payload, fname);
@@ -110,8 +110,7 @@ if($('#settings-modal').hasClass('show')){
     }
 }
     ">
-    <div id="header-cover">
-    </div>
+    <div id="header-cover"></div>
     <div id="title-bar">
         <div style="height: 100%;"><span id="caph">Caph</span></div>
         <div class="buttons">
@@ -194,7 +193,7 @@ if($('#settings-modal').hasClass('show')){
                 <div class="attachment">
                     <div class="a cwd" title="切换工作目录" onclick="dom.selectCwd()">
                         <span class="sfi">&#xE8B7;</span>
-                        <span>工作目录: </span><span id="current-cwd" class="a">获取失败</span>
+                        <span>工作目录: </span><span id="current-cwd" class="a">无</span>
                     </div>
                     <span class="a cwd" title="什么是工作目录？" style="padding: 0 5px; margin-left: -3px;" onclick="showCommandResponse('<h2>什么是工作目录？</h2><p> AI 只能在工作目录内操作文件。<b>越出工作目录的操作会被阻止。</b></p><p>当然，AI 可以自主更改工作目录，更改前会要求你确认。</p>');">
                         <span class="sfi">&#xE897;</span>
@@ -354,7 +353,6 @@ if($('#settings-modal').hasClass('show')){
             </button>
             <button id="close-settings" class="button">取消</button>
         </div>
-
     </div>
 
     <div id="devtools-confirm" style="display: none;" class="modal-overlay">

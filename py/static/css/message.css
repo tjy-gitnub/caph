@@ -95,7 +95,7 @@
 
 .message-content code:not(pre code) {
     font-family: 'Consolas', monospace;
-    background: var(--hover-color);
+    background: var(--message-bot-bg);
     padding: 2px 5px;
     margin: 0 3px;
     border-radius: 4px;

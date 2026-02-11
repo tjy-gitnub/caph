@@ -48,11 +48,6 @@
     visibility: visible;
 }
 
-#setting-token.error{
-    border-color: #ee8c8c;
-    box-shadow: 0 0 8px #ffa3a380;
-}
-
 .settings-modal{
     display: flex;
     flex-direction: column;
@@ -179,8 +174,7 @@
 }
 
 .form-field .textarea {
-    min-height: 100px;
-    resize: vertical;
+    height: 130px;
 }
 
 .form-field input[type="text"]:focus,
@@ -224,41 +218,6 @@
     text-align: center;
     font-size: 14px;
     color: var(--text-color);
-}
-
-
-/* 自定义输入控件 */
-/* .custom-input {
-    position: relative;
-    margin-bottom: 24px;
-}
-
-.custom-input label {
-    display: block;
-    margin-bottom: 8px;
-    font-size: 14px;
-    color: var(--text-color);
-}
-
-.custom-input-field {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    background: var(--card-bg);
-    color: var(--text-color);
-    font-size: 14px;
-    transition: 80ms;
-}
-
-.custom-input-field:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(41, 131, 204, 0.1);
-} */
-
-textarea.input-field {
-    min-height: 100px;
-    resize: vertical;
 }
 
 .range-slider {
@@ -330,6 +289,9 @@ textarea.input-field {
     align-items: center;
     gap: 8px;
     justify-content: space-between;
+    >.toggle-details:hover{
+        background-color: var(--list);
+    }
 }
 
 .model-list-item .drag-handle {
@@ -340,7 +302,7 @@ textarea.input-field {
     color: var(--text-color);
     user-select: none;
     font-size: 14px;
-    opacity: 0.7;
+    opacity: 0.5;
 }
 
 .model-list-item .model-name-display {

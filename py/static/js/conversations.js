@@ -214,8 +214,8 @@ class ConversationManager {
 				<div class="conv-item ${activeClass} a" data-conv-id="${conv.id}">
 					<div class="name">${conv.name}</div>
 					<div class="conv-actions">
-						<button class="edit small-btn" title="重命名"><span class="sfi">&#xE70F;</span></button>
-						<button class="del small-btn" title="删除"><span class="sfi">&#xE74D;</span></button>
+						<button class="edit small-btn" title="重命名"><span class="sfi">&#xE8AC;</span></button>
+						<button class="del small-btn" title="删除"><span class="sfi">&#xE711;</span></button>
 					</div>
 				</div>
 			`);
@@ -262,7 +262,13 @@ class ConversationManager {
 					}
 				});
 				// blur 时应用（或提示重名）
-				$input.on("blur", () => {
+				$input.on("keydown", (e)=>{
+					if(e.key=='Escape' || e.key=='Esc'){
+						e.stopPropagation();
+					}
+				});
+				$input.on("blur", (e) => {
+					e.stopPropagation();
 					finalize();
 				});
 			});

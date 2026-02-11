@@ -7,10 +7,10 @@
     --inp: #fff;
     --text-color: #000000;
     --border-color: #00000015;
-    --hover-color: #dddddd90;
-    --message-user-bg: #b7e4ffc0;
+    --hover-color: #ffffff90;
+    --message-user-bg: #d9e3ffcf;
     --message-bot-bg: #ffffffcf;
-    --shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+    --shadow: 0 3px 15px rgba(0, 0, 0, 0.1);
     --list: #5555551a;
     --red: #df4739;
     --bright-red: #ff6659;
@@ -29,7 +29,7 @@
     --hover-color: #cecece30;
     --message-user-bg: #3989bab0;
     --message-bot-bg: #202020b0;
-    --shadow: 0 4px 15px rgba(0, 0, 0, 0.7);
+    --shadow: 0 3px 15px rgba(0, 0, 0, 0.5);
     --list: #d0d0d020;
 }
 
@@ -231,7 +231,6 @@ loading>svg {
 .textarea {
     color: var(--text-color);
     font-size: 14px;
-    resize: vertical;
     padding: 12px;
     overflow-y: auto;
     resize: none;
@@ -272,7 +271,7 @@ loading>svg {
     font-size: 14px;
     cursor: default;
     transition: 80ms;
-    background: var(--hover-color);
+    background: var(--card-bg);
     color: var(--text-color);
     border: 1px solid var(--border-color);
     display: flex;
@@ -302,7 +301,7 @@ loading>svg {
 }
 
 .button:hover {
-    background: var(--list);
+    background: var(--hover-color);
 }
 
 .button.primary:hover {
@@ -410,7 +409,7 @@ loading>svg {
 
 
 .fold-content:not(.collapsed) .fold-toggle:hover {
-    background-color: var(--hover-color);
+    background-color: var(--list);
 }
 
 /* 展开切换动画 */
@@ -435,7 +434,7 @@ loading>svg {
 
 
 .fold-content.collapsed:hover {
-    background-color: #aaaaaa40;
+    background-color: var(--hover-color);
 }
 
 .fold-content.collapsed:active {

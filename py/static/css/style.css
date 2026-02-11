@@ -432,7 +432,7 @@
 }
 
 #input-container>.attachment>.a:hover {
-    background-color: var(--hover-color);
+    background-color: var(--list);
 }
 
 #input-container>.attachment>.a:active {
@@ -597,14 +597,15 @@ main.main-content>.model-dropdown {
     }
 
     >.conv-actions {
-        display: none;
+        display: flex;
+        visibility: hidden;
         gap: 6px;
         align-items: center;
 
         >.small-btn {
-            color: var(--inp);
             border: none;
             cursor: pointer;
+            color: inherit;
 
             &:hover {
                 font-weight: bolder;
@@ -614,7 +615,13 @@ main.main-content>.model-dropdown {
     }
 
     &.active>.conv-actions {
-        display: flex;
+        color: var(--inp) !important;
+        visibility: visible;
+    }
+
+    &:hover>.conv-actions {
+        color: var(--text-color);
+        visibility: visible;
     }
 
     &.renaming {

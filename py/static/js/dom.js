@@ -118,7 +118,8 @@ class Dom {
         .append(
           $(`<div id="greeting-empty">
             <p class="title">欢迎使用 Caph</p>
-            <p style="display:inline">请新建对话开始聊天。</p>
+            <p style="margin-bottom: 15px;">请新建对话开始聊天。</p>
+            <button class="button primary" onclick="convManager.createConversation();"><span class="sfi">&#xE710;</span>新建对话</button>
           </div>`)
         );
       $("#chat-header").addClass("greeting");

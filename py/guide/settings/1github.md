@@ -1,5 +1,7 @@
-<!-- name=Github Token -->
-# Github Token
+<!-- name=Github Models -->
+# Github Models
+
+Caph 初始自带了几个来自 Github Models 的免费模型。你只需要在 **设置** 的 **服务商** 页面**填写你的密钥（即 Github Token）**，即可使用。
 
 ## 什么是 Github Token？
 通俗地讲， Github Token 能用于身份验证。功能类似于你的账号+密码。

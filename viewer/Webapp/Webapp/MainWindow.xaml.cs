@@ -213,7 +213,7 @@ namespace Webapp
         private double _animDurationMs = 300.0;
 
         JsInterop jsInterop = new JsInterop();
-        private Process _childProcess;
+        //private Process _childProcess;
         public MainWindow()
         {
             CefSettings setting = new CefSettings();
@@ -657,18 +657,18 @@ namespace Webapp
         protected override void OnClosed(EventArgs e)
         {
             base.OnClosed(e);
-            if (_childProcess != null && !_childProcess.HasExited)
-            {
-                try
-                {
-                    _childProcess.Kill();
-                    _childProcess.Dispose();
-                }
-                catch
-                {
-                    // 可能已经退出
-                }
-            }
+            //if (_childProcess != null && !_childProcess.HasExited)
+            //{
+            //    try
+            //    {
+            //        _childProcess.Kill();
+            //        _childProcess.Dispose();
+            //    }
+            //    catch
+            //    {
+            //        // 可能已经退出
+            //    }
+            //}
             if (_trayIcon != null)
             {
                 _trayIcon.Visible = false;

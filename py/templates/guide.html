@@ -25,7 +25,6 @@ if(event.key=='F5' || event.key=='f5' || (event.ctrlKey && (event.key=='R' || ev
 
     <script>
         var script = document.createElement('script');
-        // 用当前时间戳作为参数
         script.src = '/static/guide.js?t=' + Date.now();
         document.head.appendChild(script);
 
@@ -158,7 +157,6 @@ if(event.key=='F5' || event.key=='f5' || (event.ctrlKey && (event.key=='R' || ev
                 const p = (e.state && e.state.path) || (location.hash && location.hash.slice(1));
                 if (p) navigateTo(p, false);
             });
-
         }
         init();
     </script>
