@@ -23,7 +23,7 @@ for %%L in (%LANGS%) do (
 endlocal
 
 rem 复制 Release 下的文件
-robocopy "..\viewer\Webapp\Webapp\bin\Release" "..\pack\_" /XF *.config *.pdb *.xml *.application *.manifest *.log /XD "..\viewer\Webapp\Webapp\bin\Release\locales"
+robocopy "..\viewer\Webapp\Webapp\bin\Release" "..\pack\_" /XF *.config *.pdb *.xml *.application *.manifest *.log /XD "..\viewer\Webapp\Webapp\bin\Release\locales" /XD "..\viewer\Webapp\Webapp\bin\Release\cache"
 
 @REM 准备启动代码
 copy /y .\django.spec ..\py\django.spec

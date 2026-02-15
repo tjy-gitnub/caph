@@ -13,12 +13,12 @@
 
     <!-- 渲染 -->
     <script src="static/js/marked.min.js"></script>
-    <script src="static/lib/auto-render.min.js"></script>
 
     <!-- KaTeX 公式 -->
     <link rel="stylesheet" href="static/lib/katex.min.css">
     <!-- <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.css"> -->
     <script src="static/lib/katex.min.js"></script>
+    <script src="static/lib/auto-render.min.js"></script>
     
     <!-- 代码高亮 -->
     <link href="static/lib/prism.css" rel="stylesheet" />
@@ -46,9 +46,6 @@ if(event.key=='F12' || event.key=='f12' || (event.ctrlKey && event.shiftKey && (
 }else if(event.key=='F1' || event.key=='f1' || (event.ctrlKey && event.key=='h')){
     event.preventDefault();
     window.cefBridge.openGuide();
-}else if(event.ctrlKey && event.key.toLowerCase()=='arrowright'){
-    event.preventDefault();
-    window.cefBridge.hideWindow();
 }
 if($('#settings-modal').hasClass('show')){
     if(event.ctrlKey && event.key==','){
@@ -118,7 +115,7 @@ if($('#settings-modal').hasClass('show')){
             <button onclick="window.cefBridge.openAbout();" class="toolbar-button" title="关于">
                 <span class="sfi">&#xE946;</span>
             </button>
-            <button class="toolbar-button" title="隐藏 (Ctrl + 向右)" onclick="window.cefBridge.hideWindow();">
+            <button class="toolbar-button" title="隐藏 (Win + C)" onclick="window.cefBridge.hideWindow();">
                 <span class="sfi">&#xE974;</span>
             </button>
         </div>

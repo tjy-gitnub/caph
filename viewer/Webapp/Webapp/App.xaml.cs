@@ -19,7 +19,7 @@ namespace Webapp
         public App()
         {
             AppDomain.CurrentDomain.AssemblyResolve += ResolveDllFromSubfolder;
-            Environment.SetEnvironmentVariable("CAPH_VERSION", "v2.2", EnvironmentVariableTarget.Process);
+            Environment.SetEnvironmentVariable("CAPH_VERSION", "v2.3", EnvironmentVariableTarget.Process);
         }
 
         private Process _childProcess;

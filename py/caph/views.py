@@ -1,13 +1,16 @@
 from django.shortcuts import render
 from django.http.response import HttpResponse, JsonResponse
-from subprocess import run as sp_run
-from webbrowser import open as open_in_browser
-
+from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_exempt
+
 import os
 import shutil
 from pathlib import Path
 import time
+
+from subprocess import run as sp_run
+from webbrowser import open as open_in_browser
+
 
 DOC_DIR = (Path.home()/'Documents') if (Path.home()/'Documents').exists() else Path.home()
 DESKTOP_DIR = (Path.home()/'Desktop') if (Path.home()/'Desktop').exists() else Path.home()
@@ -38,13 +41,15 @@ ALLOWED_READ_EXTS = {'.txt', '.md', '.py', '.json', '.cfg', '.ini', '.log', '.cs
 def make_response(text, status=200):
     return HttpResponse(text, status=status, headers={'Access-Control-Allow-Origin': '*'})
 
-
 def ready(r):
     return HttpResponse('well',headers={'Access-Control-Allow-Origin': '*'})
 
+@never_cache
 def chatpage(r):
     # 0/0
     return render(r,'index.html')
+
+@never_cache
 def guidepage(r):
     # 0/0
     return render(r,'guide.html')

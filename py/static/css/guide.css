@@ -1,17 +1,17 @@
 :root {
-    --primary-color: #2983cc;
-    --primary-hover: #44a1e8;
+    --primary-color: #005fba;
+    --primary-hover: #196ec0;
     --bg-color: #f8f8f8;
-    --card-bg: #ffffffc0;
-    --input: #ffffffa0;
+    --card-bg: #ffffffd0;
+    --input: #f5f5f5a0;
     --inp: #fff;
     --text-color: #000000;
     --border-color: #00000015;
-    --hover-color: #dddddd90;
-    --message-user-bg: #b7e4ffc0;
+    --hover-color: #ffffff90;
+    --message-user-bg: #d9e3ffcf;
     --message-bot-bg: #ffffffcf;
-    --shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
-    --list: #5555551a;
+    --shadow: 0 3px 15px rgba(0, 0, 0, 0.1);
+    --list: #55555510;
     --red: #df4739;
     --bright-red: #ff6659;
     --titlebar-height: 40px;
@@ -19,19 +19,18 @@
 
 @media (prefers-color-scheme: dark) {
     :root {
-
         --primary-color: #61ccff;
-        --primary-hover: #7ed6ff;
+        --primary-hover: #5abae9;
         --bg-color: #2b2b2b;
         --card-bg: #1b1b1bc0;
-        --input: #202020c0;
+        --input: #272727c0;
         --inp: #111;
         --text-color: #f5f5f5;
         --border-color: #cccccc42;
         --hover-color: #cecece30;
         --message-user-bg: #3989bab0;
         --message-bot-bg: #202020b0;
-        --shadow: 0 4px 15px rgba(0, 0, 0, 0.7);
+        --shadow: 0 3px 15px rgba(0, 0, 0, 0.5);
         --list: #d0d0d020;
     }
 }
@@ -167,8 +166,11 @@ hr {
 }
 
 
-.folder-list{
+.folder-list {
     display: none;
+    border-left: 2px solid var(--border-color);
+    margin-left: 5px;
+    padding-left: 4px;
 }
 
 .folder-header {
@@ -181,15 +183,11 @@ hr {
     width: 16px;
     display: inline-block;
     transition: transform 150ms ease;
-    margin-right: 6px;
+    margin-right: 3px;
 }
 
 .folder-header.expanded .arrow {
     transform: rotate(90deg);
-}
-
-.folder-list {
-    padding-left: 8px;
 }
 
 main {
@@ -219,7 +217,7 @@ main {
     /* border-top-left-radius: 10px; */
 }
 
-#content>.content{
+#content>.content {
     animation: fadeIn 0.3s ease-out;
 }
 
@@ -227,6 +225,7 @@ main {
     from {
         opacity: 0;
     }
+
     to {
         opacity: 1;
     }
@@ -272,7 +271,7 @@ main {
 
 #content ul,
 #content ol {
-    padding-left: 21px;
+    padding-left: 25px;
 }
 
 #content h1,
@@ -282,7 +281,7 @@ main {
 #content h5,
 #content h6 {
     font-weight: 400;
-    margin: 10px 0 8px 5px;
+    margin: 15px 0 7px 5px;
 }
 
 #content h1 {
@@ -316,7 +315,7 @@ main {
     margin-inline-end: 0;
     padding: 5px 5px 5px 15px;
     border-radius: 0 10px 10px 0;
-    background-color: #7f7f7f30;
+    background-color: #88888827;
     border-left: 3px solid var(--primary-color);
 }
 

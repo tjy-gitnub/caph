@@ -2,7 +2,7 @@ class ContentProcessor {
   constructor() {
     // 初始化 marked
     marked.setOptions({
-      breaks: true, // 正确展示换行
+      breaks: true,
       highlight: function (code, lang) {
         return code;
       },
@@ -94,10 +94,8 @@ class ContentProcessor {
           replacement = this.wrapInPreview("SVG", decodedCode, decodedCode);
         }else{
           replacement=decodedCode;
-          console.log(fullMatch,type,decodedCode)
         }
       } catch (err) {
-        // console.error(`${type} 渲染失败:`, err);
         replacement = this.wrapInPreview(
           `${type} (渲染失败)`,
           decodedCode,
@@ -236,14 +234,5 @@ class ContentProcessor {
       });
     }
 
-
-}
-
-class Chat {
-  constructor() {
-    
-  }
-
-  
 
 }

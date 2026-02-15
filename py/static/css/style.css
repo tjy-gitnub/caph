@@ -119,7 +119,7 @@
     transition: 80ms;
 
     &:hover {
-        background-color: var(--hover-color);
+        background-color: var(--list);
     }
 
     &:active {
@@ -291,7 +291,7 @@
     align-self: center;
 
     >.message-content {
-        background: #ff6d6d30;
+        background: #ff6d6d50;
         outline: 2px solid #ee8c8c;
         white-space: pre-wrap;
         word-break: break-word;

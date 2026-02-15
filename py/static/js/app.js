@@ -765,3 +765,7 @@ function opendevtools() {
   $('#devtools-confirm').fadeIn(100);
   $('#app,#settings-modal').removeClass('show');
 }
+
+if(!localStorage.getItem('firsttime')){
+  window.cefBridge.openGuide();
+}

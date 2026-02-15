@@ -15,7 +15,6 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <StartAction>Project</StartAction>
-    <StartArguments>
-    </StartArguments>
+    <StartArguments>--debug</StartArguments>
   </PropertyGroup>
 </Project>

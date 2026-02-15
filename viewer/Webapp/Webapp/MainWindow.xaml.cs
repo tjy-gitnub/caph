@@ -3,23 +3,17 @@ using CefSharp.Wpf;
 using Microsoft.Win32;
 using System;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using System.Windows.Media.Imaging;
 using Wpf.Ui.Appearance;
-using Wpf.Ui.Controls;
-using System.Threading;
 
 namespace Webapp
 {
@@ -212,17 +206,68 @@ namespace Webapp
         private double _animTo;
         private double _animDurationMs = 300.0;
 
+        // 快捷键
+        private const int WH_KEYBOARD_LL = 13;
+        private const int WM_KEYDOWN = 0x0100;
+        private static IntPtr _hookID = IntPtr.Zero;
+        private static LowLevelKeyboardProc _proc = HookCallback;
+        private static MainWindow _instance;
+
+        private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
+
+        private static IntPtr SetHook(LowLevelKeyboardProc proc)
+        {
+            using (var curProcess = Process.GetCurrentProcess())
+            using (var curModule = curProcess.MainModule)
+            {
+                return SetWindowsHookEx(WH_KEYBOARD_LL, proc,
+                    GetModuleHandle(curModule.ModuleName), 0);
+            }
+        }
+
+        private static IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+        {
+            if (nCode >= 0 && wParam == (IntPtr)WM_KEYDOWN)
+            {
+                int vkCode = Marshal.ReadInt32(lParam);
+                if ((Keyboard.IsKeyDown(Key.LWin) || Keyboard.IsKeyDown(Key.RWin)) &&
+                    vkCode == KeyInterop.VirtualKeyFromKey(Key.C))
+                {
+                    _instance.Dispatcher.Invoke(() =>
+                    {
+                        _instance.ToggleShowFromTray();
+                    });
+                    return (IntPtr)1;
+                }
+            }
+            return CallNextHookEx(_hookID, nCode, wParam, lParam);
+        }
+
+        // WinAPI
+        [DllImport("user32.dll")] private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);
+        [DllImport("user32.dll")] private static extern bool UnhookWindowsHookEx(IntPtr hhk);
+        [DllImport("user32.dll")] private static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
+        [DllImport("kernel32.dll")] private static extern IntPtr GetModuleHandle(string lpModuleName);
+
+
         JsInterop jsInterop = new JsInterop();
         //private Process _childProcess;
         public MainWindow()
         {
+            //string cachePath = AppDomain.CurrentDomain.BaseDirectory + "cache";
+            //if (Directory.Exists(cachePath))
+            //{
+            //    Directory.Delete(cachePath, true); // 递归删除缓存文件夹
+            //}
+
             CefSettings setting = new CefSettings();
             setting.CefCommandLineArgs.Add("disable-web-security", "1");
+            setting.CefCommandLineArgs.Add("disable-application-cache", "1");
+            setting.CefCommandLineArgs.Add("disable-session-storage", "1");
+            setting.CachePath = AppDomain.CurrentDomain.BaseDirectory + "cache";
             Cef.Initialize(setting);
 
             InitializeComponent();
-            
-            // enforce fixed width and disable resizing
             this.Width = WINDOW_WIDTH;
             this.MinWidth = this.MaxWidth = WINDOW_WIDTH;
             this.ResizeMode = ResizeMode.NoResize;
@@ -230,7 +275,11 @@ namespace Webapp
             Loaded += MainWindow_Loaded;
             SourceInitialized += MainWindow_SourceInitialized;
 
-            //HideButton.Click += HideButton_Click;
+            // 注册快捷键
+            _instance = this;
+            _hookID = SetHook(_proc);
+
+            // 颜色主题初始化
             Loaded += (sender, args) =>
             {
                 Wpf.Ui.Appearance.SystemThemeWatcher.Watch(
@@ -244,9 +293,11 @@ namespace Webapp
             ThemeListener listener = new ThemeListener();
             listener.ThemeChanged += handle_ThemeChanged;
             handle_ThemeChanged(this, EventArgs.Empty);
-            // Initialize tray
+
+            // 托盘
             InitTray();
 
+            // CEF 通信
             cefb.JavascriptObjectRepository.Settings.LegacyBindingEnabled = true;
             jsInterop.browserControl = cefb;
             jsInterop.animateHideWindow = () =>
@@ -276,8 +327,9 @@ namespace Webapp
             cefb.JavascriptObjectRepository.Register("cefBridge", jsInterop, isAsync: true, options: BindingOptions.DefaultBinder);
             cefb.DownloadHandler = new DownloadHandler();
 
-            cefb.LoadError += Browser_LoadError; 
 
+            // 自定义页面
+            cefb.LoadError += Browser_LoadError;
             cefb.LoadHtml($@"<!DOCTYPE html>
 <html>
 <head>
@@ -398,13 +450,6 @@ namespace Webapp
 </html>");
         }
 
-
-        //private void Cefb_FrameLoadEnd(object sender, FrameLoadEndEventArgs e)
-        //{
-        //    throw new NotImplementedException();
-        //}
-
-        // 事件处理方法
         private void Browser_LoadError(object sender, CefSharp.LoadErrorEventArgs e)
         {
             // 排除中断导航的特殊情况（比如用户取消）
@@ -615,7 +660,7 @@ namespace Webapp
             _trayIcon = new NotifyIcon();
             _trayIcon.Icon = System.Drawing.SystemIcons.Application;
             _trayIcon.Visible = true;
-            _trayIcon.Text = "Caph";
+            _trayIcon.Text = "Caph\n单击或按 Win+C 隐藏边栏";
 
             var context = new System.Windows.Forms.ContextMenuStrip();
             var exitItem = new ToolStripMenuItem("退出");
@@ -648,10 +693,13 @@ namespace Webapp
 
                 AnimateHide(false);
                 this.Activate();
+                _trayIcon.Text = "Caph\n单击或按 Win+C 隐藏边栏";
             }
             else
             {
                 AnimateHide(true);
+                _trayIcon.Text = "Caph\n单击或按 Win+C 显示边栏";
+
             }
         }
         protected override void OnClosed(EventArgs e)
@@ -669,6 +717,7 @@ namespace Webapp
             //        // 可能已经退出
             //    }
             //}
+            UnhookWindowsHookEx(_hookID);
             if (_trayIcon != null)
             {
                 _trayIcon.Visible = false;

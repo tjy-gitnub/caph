@@ -2,7 +2,7 @@
     --primary-color: #005fba;
     --primary-hover: #196ec0;
     --bg-color: #f8f8f8;
-    --card-bg: #ffffffc0;
+    --card-bg: #ffffffd0;
     --input: #f5f5f5a0;
     --inp: #fff;
     --text-color: #000000;
@@ -11,7 +11,7 @@
     --message-user-bg: #d9e3ffcf;
     --message-bot-bg: #ffffffcf;
     --shadow: 0 3px 15px rgba(0, 0, 0, 0.1);
-    --list: #5555551a;
+    --list: #55555510;
     --red: #df4739;
     --bright-red: #ff6659;
     --titlebar-height: 40px;

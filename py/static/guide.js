@@ -1,10 +1,16 @@
 window.GUIDE_DATA = {
   "files": [
     {
-      "name": "welcome",
+      "name": "new",
       "title": "欢迎",
-      "path": "welcome.md",
-      "html": "<h1>欢迎使用 Caph !</h1>\n\n<p>以下是常见的一些问题：</p>\n\n<ul>\n<li>Github token 是什么？我要如何得到它？<a href=\"#\" data-mdpath=\"settings/1token.md\">&gt;&gt; token相关</a></li>\n<li>怎么添加更多 AI 模型？怎么修改模型？<a href=\"#\" data-mdpath=\"settings/2models.md\">&gt;&gt; 模型管理</a></li>\n<li>怎么添加其它平台的 AI？<a href=\"#\" data-mdpath=\"settings/3provider.md\">&gt;&gt; 服务商</a></li>\n</ul>\n"
+      "path": "new.md",
+      "html": "<h1>欢迎使用 Caph！</h1>\n\n<p>以下是 Caph 的基本使用方法。</p>\n\n<h2>如何打开、隐藏边栏？</h2>\n\n<p>下面任意一种方法都行：</p>\n\n<ol>\n<li>按 <strong>快捷键 <code>Win</code>+<code>C</code></strong>（这原本是 Windows Copilot 的快捷键）；</li>\n<li>单击右下角 <strong>系统托盘</strong> 的 Caph 图标（找不到的请检查有没有被折叠，建议拖出来）；</li>\n<li>已打开时，可以按右上角 <code>&gt;</code> 按钮隐藏边栏。</li>\n</ol>\n\n<h2>如何开机自启？</h2>\n\n<p>Caph 本身没有实现此功能，如果确需开机自启，请：</p>\n\n<ol>\n<li>按 <code>Win</code>+<code>R</code>，打开“运行”对话框；</li>\n<li>输入 <code>shell:startup</code>，回车；</li>\n<li>为 Caph.exe 创建一个快捷方式，将快捷方式放在打开的文件夹里，即可。</li>\n</ol>\n\n<h2>如何退出？</h2>\n\n<p>在右下角托盘的 Caph 图标上右键，退出。</p>\n\n<h2>更多问题</h2>\n\n<p>见更多<a href=\"#\" data-mdpath=\"prb.md\">常见问题</a></p>\n"
+    },
+    {
+      "name": "prb",
+      "title": "常见问题",
+      "path": "prb.md",
+      "html": "<h1>常见问题与指南</h1>\n\n<p>以下是常见的一些问题：</p>\n\n<ul>\n<li>Github token 是什么？我要如何得到它？<a href=\"#\" data-mdpath=\"settings/1token.md\">&gt;&gt; token相关</a></li>\n<li>怎么添加更多 AI 模型？怎么修改模型？<a href=\"#\" data-mdpath=\"settings/2models.md\">&gt;&gt; 模型管理</a></li>\n<li>怎么添加其它平台的 AI？<a href=\"#\" data-mdpath=\"settings/3provider.md\">&gt;&gt; 服务商</a></li>\n</ul>\n"
     }
   ],
   "children": [

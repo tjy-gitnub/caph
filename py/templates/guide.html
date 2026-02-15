@@ -150,7 +150,12 @@ if(event.key=='F5' || event.key=='f5' || (event.ctrlKey && (event.key=='R' || ev
             }
 
             // 初始化：优先 hash
-            const initial = location.hash && location.hash.length > 1 ? location.hash.slice(1) : (Object.keys(index)[0] || '');
+            let initial = location.hash && location.hash.length > 1 ? location.hash.slice(1) : 'prb.md';
+            
+            if(!localStorage.getItem('firsttime')){
+                initial='new.md';
+                localStorage.setItem('firsttime','false');
+            }
             if (initial) navigateTo(initial, false);
 
             window.addEventListener('popstate', function (e) {
