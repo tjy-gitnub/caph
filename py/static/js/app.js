@@ -372,7 +372,10 @@ async function sendToServer() {
     // 构建消息历史（包含system prompt）
     const active = convManager.getActive();
     const enableTool = localStorage.getItem("enableTool") === "true";
-    const systemPrompt = settings_data.simplePrompt + (enableTool ? '\n\n' + settings_data.toolCallPrompt + '\n\n默认的工作目录在用户的 Documents 文件夹。越出当前工作目录的操作都会被阻止，如果你要操作其它位置，必须先用change_directory工具切换工作目录。' : '');
+    const systemPrompt = settings_data.simplePrompt + (enableTool ? '\n\n' + settings_data.toolCallPrompt 
+      + '\n\n默认的工作目录在用户的 Documents 文件夹。'+ (localStorage.getItem("removeCwdLimit") === "true" ? '' : '越出当前工作目录的操作都会被阻止，如果你要操作其它位置，必须先用 change_directory 工具切换工作目录。') +'你可以在路径中使用"%"包裹环境变量。'
+      : ''
+    );
     const temperature = settings_data.temperature ?? 0.7;
     // modelToUse 为模型的 id（api 识别用）——根据 pid 找到 id
     const modelPidToUse = active?.model || currentModelPid;

@@ -192,7 +192,7 @@ if($('#settings-modal').hasClass('show')){
                         <span class="sfi">&#xE8B7;</span>
                         <span>工作目录: </span><span id="current-cwd" class="a">无</span>
                     </div>
-                    <span class="a cwd" title="什么是工作目录？" style="padding: 0 5px; margin-left: -3px;" onclick="showCommandResponse('<h2>什么是工作目录？</h2><p> AI 只能在工作目录内操作文件。<b>越出工作目录的操作会被阻止。</b></p><p>当然，AI 可以自主更改工作目录，更改前会要求你确认。</p>');">
+                    <span class="a cwd" title="什么是工作目录？" style="padding: 0 5px; margin-left: -3px;" onclick="showCommandResponse('<h2>什么是工作目录？</h2><p>就是 AI 当前进行文件操作的目录。当被限制时，AI 只能在工作目录内操作文件。<b>越出工作目录的操作会被阻止。</b></p><p>当然，AI 可以自主更改工作目录，更改前会要求你确认。</p><p>不过，如果你想允许 AI 操作电脑上的多个位置，比如进行跨文件夹操作、跨盘操作，或者认为自己能明确判断 AI 进行的操作有无危害，那么你可以在设置的工具页面中取消对 AI 文件操作的绝对限制。</p>');">
                         <span class="sfi">&#xE897;</span>
                     </span>
                 </div>

@@ -33,6 +33,7 @@ class Settings {
       modelList: Array.isArray(DEFAULT_SETTINGS.modelList) ? DEFAULT_SETTINGS.modelList.slice() : [],
       providers: Array.isArray(DEFAULT_SETTINGS.providers) ? DEFAULT_SETTINGS.providers.slice() : [],
       tools_disabled: {},
+      removeCwdLimit: typeof DEFAULT_SETTINGS.removeCwdLimit ? DEFAULT_SETTINGS.removeCwdLimit : false,
     };
 
     const savedSettings = JSON.parse(localStorage.getItem("chatSettings") || "null");
@@ -63,6 +64,7 @@ class Settings {
       if (typeof savedSettings.stream !== 'undefined') ret.stream = savedSettings.stream;
       if (typeof savedSettings.autoTheme !== 'undefined') ret.autoTheme = savedSettings.autoTheme;
       if (typeof savedSettings.theme !== 'undefined') ret.theme = savedSettings.theme;
+      if (typeof savedSettings.removeCwdLimit !== 'undefined') ret.removeCwdLimit = savedSettings.removeCwdLimit;
     }
 
     // 迁移旧的单独 ghtoken（若存在），写入 providers.github.api_key 并删除原 localStorage
@@ -113,6 +115,8 @@ class Settings {
       .val(settings_data.temperature || 0.7)
       .trigger("input");
     $("#setting-stream").prop("checked", settings_data.stream !== false);
+    // 新增：移除工作目录限制
+    $("#setting-remove-cwd-limit").prop("checked", settings_data.removeCwdLimit || false);
 
     // 渲染模型与服务商列表
     this.renderModelSettings();
@@ -153,6 +157,9 @@ class Settings {
 
     // 保存 providers（从 UI）
     newSettings.providers = this.getProvidersFromUI();
+
+    // 保存：移除工作目录限制
+    newSettings.removeCwdLimit = $("#setting-remove-cwd-limit").prop("checked");
 
     // 更新设置
     settings_data = newSettings;
@@ -462,6 +469,16 @@ class Settings {
 
   renderToolSettings() {
     const $toolList = $("#av-tools-list").empty();
+    // 在工具列表顶部添加“移除工作目录限制”选项
+    $toolList.append(`
+      <div class="form-field" style="padding:8px;border-bottom:1px solid var(--border-color);">
+        <label class="checkbox-wrapper" style="display:flex;align-items:center;gap:8px;">
+          <input type="checkbox" id="setting-remove-cwd-limit" ${settings_data.removeCwdLimit ? 'checked' : ''}/>
+          <span>取消工作目录限制</span>
+        </label>
+        <div style="font-size:13px;opacity:0.8;margin-top:6px;">勾选后，AI 访问没有明确允许的文件时不会被直接拒绝，而是先询问你。</div>
+      </div>
+    `);
     av_tools.forEach(tool => {
       $toolList.append(`<div class="a" onclick="$(this).find('.tool-enable').click();">
         <input type="checkbox" class="tool-enable" data-tool-name="${tool.function.name}"

@@ -37,12 +37,13 @@ const av_tools = [
             },
         },
     },
-    
+
     {
         type: "function",
         function: {
             name: "change_directory",
-            description: `切换当前工作目录。在进行文件操作时，只允许读取和操作工作目录内的内容。你可以通过这个工具来请求切换到其它工作目录。`,
+            // description: `切换当前工作目录。在进行文件操作时，只允许读取和操作工作目录内的内容。你可以通过这个工具来请求切换到其它工作目录。`,
+            description: `请求切换当前工作目录。`,
             parameters: {
                 type: "object",
                 properties: {
@@ -243,6 +244,7 @@ function call_tool_with_cwd(toolname) {
     return function (c) {
         const cwd_now = convManager.getcwd();
         if (cwd_now) c.cwd = cwd_now;
+        if (typeof settings_data !== 'undefined' && settings_data.removeCwdLimit) c.unrestricted = 'true';
         return $.post('/tool/' + toolname, c).then(data => data).catch(r => {
             return `[命令执行失败: ${r.status} ${r.statusText}]`;
         });
@@ -255,6 +257,7 @@ const tool_handlers = {
 
     change_directory: (args) => {
         // 调用处会特殊处理
+        // if (typeof settings_data !== 'undefined' && settings_data.removeCwdLimit) args.unrestricted = true;
         return $.post('/tool/change_directory', args).then(data => {
             return data;
         })
@@ -274,16 +277,12 @@ const tool_handlers = {
 };
 
 const tool_describers = {
-    run_cmd: (args) => {
-        return `运行 cmd 命令 <code>${args.command}</code>`;
-    },
-    open_url: (args) => {
-        return `打开链接 <code>${args.url}</code>`;
-    },
+    run_cmd: (args) => { return `运行 cmd 命令 <code>${args.command}</code>`; },
+    open_url: (args) => { return `打开链接 <code>${args.url}</code>`; },
 
-    change_directory: (args) => `切换工作目录到 <code>${args.path}</code>`,
+    change_directory: (args) => `切换工作目录到 <code>${args.path}</code>` + (args && args.unrestricted ? '（已移除工作目录限制）' : ''),
     list_directory: (args) => `列出 <code>${args.path || '工作目录'}</code> 下的内容`,
-    create_file: (args) => `新建文件 <code>${args.path}</code>`+(args.content?`，并写入 <code>${args.content.length > 20?args.content.substring(0,20)+'...':args.content}</code>`:''),
+    create_file: (args) => `新建文件 <code>${args.path}</code>` + (args.content ? `，并写入 <code>${args.content.length > 20 ? args.content.substring(0, 20) + '...' : args.content}</code>` : ''),
     create_folder: (args) => `新建文件夹 <code>${args.path}</code>`,
     delete_file_or_folder: (args) => `删除 <code>${args.path}</code>`,
     move_file_or_folder: (args) => `移动 <code>${args.src}</code> 到 <code>${args.dst}</code>`,
@@ -293,5 +292,5 @@ const tool_describers = {
     open_file: (args) => `打开 <code>${args.path}</code>`,
     reveal_in_explorer: (args) => `向你展示 <code>${args.path}</code>`,
     read_file: (args) => `阅读 <code>${args.path}</code>`,
-    write_file: (args) => `向 <code>${args.path}</code> 写入内容`+(args.content?` <code>${args.content.length > 20?args.content.substring(0,20)+'...':args.content}</code>`:''),
+    write_file: (args) => `向 <code>${args.path}</code> 写入内容` + (args.content ? ` <code>${args.content.length > 20 ? args.content.substring(0, 20) + '...' : args.content}</code>` : ''),
 };

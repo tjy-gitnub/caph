@@ -17,19 +17,35 @@ DESKTOP_DIR = (Path.home()/'Desktop') if (Path.home()/'Desktop').exists() else P
 ALLOWED_READ_EXT = {'.txt', '.md', '.py', '.json', '.csv', '.log', '.cfg', '.ini', '.html', '.js', '.css', '.xml', '.cpp', '.java', '.bat', '.sh'}
 MAX_READ_SIZE = 2 * 1024 * 1024  # 2MB
 
-def _safe_resolve(p):
+def _safe_resolve(p, unrestricted):
     try:
         p = Path(p)
         if not p.is_absolute():
             p = (Path('.').resolve() / p).resolve()
         print(str(p))
         p=Path(os.path.expandvars(p))
+        if unrestricted:
+            return p
+        
         if p.is_relative_to(Path('.').resolve()):
             return p
         else:
             return None
     except Exception:
         return None
+    
+def process_path(*keylist):
+    def decorator(func):
+        def wrapper(r):
+            os.chdir(r.POST.get('cwd',DOC_DIR))
+            ret=dict()
+            print(r.POST.get('unrestricted','false'))
+            unrestricted=bool(r.POST.get('unrestricted','false') == 'true')
+            for i in keylist:
+                ret[i]=_safe_resolve(r.POST.get(i,''), unrestricted)
+            return func(r, **ret)
+        return wrapper
+    return decorator
 
 print('-'*20,'服务端日志','-'*20+'\n')
 
@@ -73,12 +89,11 @@ def open_url(r):
 # 文件操作实现
 
 @csrf_exempt
-def create_file(r):
+@process_path('path')
+def create_file(r,path):
     # content = r.POST.get('content','')
-    os.chdir(r.POST.get('cwd',DOC_DIR))
-    path = _safe_resolve(r.POST.get('path',''))
     if not path:
-        return HttpResponse('[错误：路径越出工作目录]')
+        return HttpResponse('[错误：路径越出工作目录] 你可以使用 change_directory 工具切换工作目录。')
     # 创建父目录
     path.parent.mkdir(parents=True, exist_ok=True)
     # 创建文件
@@ -88,25 +103,23 @@ def create_file(r):
     return HttpResponse(f'{path} 已创建')
         
 @csrf_exempt
-def create_folder(r):
-    os.chdir(r.POST.get('cwd',DOC_DIR))
-    path = _safe_resolve(r.POST.get('path',''))
+@process_path('path')
+def create_folder(r,path):
     if not path:
-        return HttpResponse('[错误：路径越出工作目录]')
+        return HttpResponse('[错误：路径越出工作目录] 你可以使用 change_directory 工具切换工作目录。')
     # 创建文件夹及其父目录
     path.mkdir(parents=True, exist_ok=True)
     return HttpResponse(f'文件夹 {path} 已创建')
 
 @csrf_exempt
-def delete_file_or_folder(r):
-    os.chdir(r.POST.get('cwd',DOC_DIR))
-    path = _safe_resolve(r.POST.get('path',''))
+@process_path('path')
+def delete_file_or_folder(r,path):
     if not path:
-        return HttpResponse('[错误：路径越出工作目录]')
+        return HttpResponse('[错误：路径越出工作目录] 你可以使用 change_directory 工具切换工作目录。')
     if not path.exists():
         return HttpResponse('[错误：目标不存在]')
     if path == Path('.').resolve():
-        return HttpResponse('[错误：不能删除当前工作目录]')
+        return HttpResponse('[错误：不能删除当前目录] 你可以使用 change_directory 工具切换工作目录。')
     try:
         if path.is_dir():
             shutil.rmtree(path)
@@ -117,18 +130,16 @@ def delete_file_or_folder(r):
         return HttpResponse(f'[错误: {e}]')
 
 @csrf_exempt
-def move_file_or_folder(r):
-    os.chdir(r.POST.get('cwd',DOC_DIR))
-    src = _safe_resolve(r.POST.get('src',''))
-    dst = _safe_resolve(r.POST.get('dst','')) # 目标（文件或文件夹）
+@process_path('src','dst')
+def move_file_or_folder(r,src,dst):
     if not src:
-        return HttpResponse('[错误：源路径不允许]')
+        return HttpResponse('[错误：源路径越出工作目录] 你只能在工作目录内部操作。')
     if not src.exists():
         return HttpResponse('[错误：源路径不存在]')
     if src == Path('.').resolve():
-        return HttpResponse('[错误：不能移动当前工作目录]')
+        return HttpResponse('[错误：不能移动当前目录] 你可以使用 change_directory 工具切换工作目录。')
     if not dst:
-        return HttpResponse('[错误：目标路径不允许]')
+        return HttpResponse('[错误：目标路径越出工作目录] 你只能在工作目录内部操作。')
     if not dst.parent.exists():
         dst.parent.mkdir(parents=True, exist_ok=True)
     try:
@@ -138,16 +149,14 @@ def move_file_or_folder(r):
         return HttpResponse(f'[错误: {e}]')
 
 @csrf_exempt
-def copy_file_or_folder(r):
-    os.chdir(r.POST.get('cwd',DOC_DIR))
-    src = _safe_resolve(r.POST.get('src',''))
-    dst = _safe_resolve(r.POST.get('dst','')) # 目标（文件或文件夹）
+@process_path('src','dst')
+def copy_file_or_folder(r,src,dst):
     if not src:
-        return HttpResponse('[错误：源路径越出工作目录]')
+        return HttpResponse('[错误：源路径越出工作目录] 你只能在工作目录内部操作。')
     if not src.exists():
         return HttpResponse('[错误：源路径不存在]')
     if not dst:
-        return HttpResponse('[错误：目标路径越出工作目录]')
+        return HttpResponse('[错误：目标路径越出工作目录] 你只能在工作目录内部操作。')
     if dst.exists():
         return HttpResponse('[错误：目标已存在]')
     try:
@@ -168,12 +177,11 @@ def _is_valid_filename(name: str) -> bool:
     return True
 
 @csrf_exempt
-def rename_file_or_folder(r):
-    os.chdir(r.POST.get('cwd',DOC_DIR))
-    src = _safe_resolve(r.POST.get('src',''))
+@process_path('src')
+def rename_file_or_folder(r,src):
     new_name:str = r.POST.get('new_name','')
     if not src:
-        return HttpResponse('[错误：源路径越出工作目录]')
+        return HttpResponse('[错误：源路径越出工作目录] 你可以使用 change_directory 工具切换工作目录。')
     if not src.exists():
         return HttpResponse('[错误：源路径不存在]')
     if src.parent.joinpath(new_name).exists():
@@ -196,11 +204,10 @@ def _format_size(size_bytes):
     return f"{size_bytes:.2f} PB"
 
 @csrf_exempt
-def get_file_or_folder_props(r):
-    os.chdir(r.POST.get('cwd',DOC_DIR))
-    path = _safe_resolve(r.POST.get('path',''))
+@process_path('path')
+def get_file_or_folder_props(r,path):
     if not path:
-        return JsonResponse({'error': '路径越出工作目录'})
+        return JsonResponse({'error': '路径越出工作目录。你可以使用 change_directory 工具切换工作目录。'})
     if not path.exists():
         return JsonResponse({'error': '路径不存在'})
     if path.is_file():
@@ -221,12 +228,10 @@ def get_file_or_folder_props(r):
     return JsonResponse(props)
 
 @csrf_exempt
-def open_file(r):
-    os.chdir(r.POST.get('cwd',DOC_DIR))
-    path = _safe_resolve(r.POST.get('path',''))
-
+@process_path('path')
+def open_file(r,path):
     if not path:
-        return HttpResponse('[错误：路径越出工作目录]')
+        return HttpResponse('[错误：路径越出工作目录] 你可以使用 change_directory 工具切换工作目录。')
     if not path.exists():
         return HttpResponse('[错误：文件不存在]')
     try:
@@ -237,11 +242,10 @@ def open_file(r):
     
 
 @csrf_exempt
-def reveal_in_explorer(r):
-    os.chdir(r.POST.get('cwd',DOC_DIR))
-    path = _safe_resolve(r.POST.get('path',''))
+@process_path('path')
+def reveal_in_explorer(r,path):
     if not path:
-        return HttpResponse('[错误：路径越出工作目录]')
+        return HttpResponse('[错误：路径越出工作目录] 你可以使用 change_directory 工具切换工作目录。')
     if not path.exists():
         return HttpResponse('[错误：文件或文件夹不存在]')
     try:
@@ -254,12 +258,12 @@ def reveal_in_explorer(r):
         return HttpResponse(f'[错误: {e}]')
 
 @csrf_exempt
-def read_file(r):
-    os.chdir(r.POST.get('cwd',DOC_DIR))
-    path = _safe_resolve(r.POST.get('path',''))
+@process_path('path')
+def read_file(r,path):
+    print(path)
     encoding = r.POST.get('encoding','utf-8')
     if not path:
-        return HttpResponse('[错误：路径越出工作目录]')
+        return HttpResponse('[错误：路径越出工作目录] 你可以使用 change_directory 工具切换工作目录。')
     if not path.exists() or not path.is_file():
         return HttpResponse('[错误：文件不存在]')
     if path.suffix.lower() not in ALLOWED_READ_EXT:
@@ -275,13 +279,12 @@ def read_file(r):
     
 
 @csrf_exempt
-def write_file(r):
-    os.chdir(r.POST.get('cwd',DOC_DIR))
-    path = _safe_resolve(r.POST.get('path',''))
+@process_path('path')
+def write_file(r,path):
     content = r.POST.get('content','')
     encoding = r.POST.get('encoding','utf-8')
     if not path:
-        return HttpResponse('[错误：路径越出工作目录]')
+        return HttpResponse('[错误：路径越出工作目录] 你可以使用 change_directory 工具切换工作目录。')
     try:
         # 创建父目录
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -291,11 +294,10 @@ def write_file(r):
         return HttpResponse(f'[错误: {e}]')
     
 @csrf_exempt
-def list_directory(r):
-    os.chdir(r.POST.get('cwd',DOC_DIR))
-    path = _safe_resolve(r.POST.get('path',''))
+@process_path('path')
+def list_directory(r,path):
     if not path:
-        return HttpResponse('[错误：路径越出工作目录]')
+        return HttpResponse('[错误：路径越出工作目录] 你可以使用 change_directory 工具切换工作目录。')
     if not path.exists() or not path.is_dir():
         return HttpResponse('[错误：目录不存在]')
     items = []

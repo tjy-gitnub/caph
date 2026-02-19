@@ -15,6 +15,7 @@ const DEFAULT_SETTINGS = {
   stream: true,
   autoTheme: true,
   theme: null,
+  removeCwdLimit: false,
 
   // modelList: 每个模型包含 id(api识别标识)、name(显示名)、provider(服务商标识)、pid(程序内部数字ID)
   modelList: [
